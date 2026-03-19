@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Рюкзачок</title>
+
+  <style>
+    :root {
+      --bg: #f0fdf4;
+      --card-bg: #ffffff;
+      --accent: #ffd84d;
+      --text: #000000;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --shadow: rgba(0,0,0,0.1);
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 { margin: 0 0 15px; font-size: 2.5rem; color: #166534; }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    .task {
+      background: var(--card-bg);
+      padding: 15px 25px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      flex-grow: 1;
+    }
+
+    #btnTopRestart {
+      display: none;
+      background: white;
+      color: black;
+      border: 3px solid var(--good);
+      padding: 12px 25px;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.2rem;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    
+    #btnTopRestart:hover {
+      background: var(--bg);
+    }
+
+    .game-area {
+      display: flex;
+      gap: 40px;
+      max-width: 1600px;
+      width: 100%;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .backpack-side {
+      flex: 0 0 450px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .backpack-container {
+      width: 400px;
+      height: 500px;
+      /* Переконуємося, що фонове зображення рюкзака також .png */
+      background-image: url('01.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #drop-zone {
+      position: absolute;
+      top: 30%;
+      left: 20%;
+      width: 60%;
+      height: 40%;
+      z-index: 1;
+    }
+
+    #drop-zone.hover { background: rgba(34, 197, 94, 0.1); border-radius: 50%; }
+
+    #feedback-icons {
+      margin-top: 10px;
+      height: 80px;
+      font-size: 4rem;
+    }
+
+    .status-icon { display: none; }
+
+    .items-side {
+      flex: 1;
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 25px;
+      box-shadow: 0 10px 25px var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 20px;
+    }
+
+    .drag-item {
+      width: 200px; 
+      height: 200px;
+      cursor: grab;
+      background: #f8fafc;
+      border-radius: 20px;
+      border: 3px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      transition: border-color 0.3s;
+    }
+
+    .drag-item img { max-width: 85%; max-height: 85%; pointer-events: none; }
+
+    .drag-item.hidden-in-bag { display: none; }
+
+    .snd {
+      background: var(--accent);
+      border: none;
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    #winMsg {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      color: black;
+      padding: 50px 70px;
+      border-radius: 35px;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.4);
+      z-index: 2000;
+      text-align: center;
+      border: 6px solid var(--good);
+    }
+
+    .fade-out { animation: fadeOutAnim 1s forwards; }
+    @keyframes fadeOutAnim {
+      from { opacity: 1; }
+      to { opacity: 0; visibility: hidden; }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Рюкзачок</h1>
+
+  <div class="header-controls">
+    <div class="task">
+      <button class="snd" onclick="playSnd('zav.mp3')">🔊</button>
+      <span>Склади у рюкзачок усі предмети, які потрібно взяти до школи.</span>
+    </div>
+    <button id="btnTopRestart" onclick="location.reload()">Ще раз.</button>
+  </div>
+
+  <div class="game-area">
+    <div class="items-side" id="pool"></div>
+
+    <div class="backpack-side">
+      <div class="backpack-container" id="backpack">
+        <div id="drop-zone"></div>
+      </div>
+      
+      <div id="feedback-icons">
+        <span id="icon-correct" class="status-icon">✅</span>
+        <span id="icon-wrong" class="status-icon">❌</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="winMsg">
+    <div style="font-size: 6rem;">🎉</div>
+    <div style="font-size: 2.5rem; font-weight: bold;">Чудово! Рюкзак зібрано!</div>
+  </div>
+
+  <audio id="audioPlayer"></audio>
+  <audio id="pop" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+
+<script>
+  // Предмети, які потрібно взяти: 1, 2, 5, 8, 9, 10, 11, 12
+  // Предмети-пастки: 3, 4, 6, 7
+  const correctIds = [1, 2, 5, 8, 9, 10, 11, 12];
+  const allIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; 
+  
+  const pool = document.getElementById('pool');
+  const dropZone = document.getElementById('drop-zone');
+  const winMsg = document.getElementById('winMsg');
+  const btnRestart = document.getElementById('btnTopRestart');
+  let gatheredCount = 0;
+
+  // Ініціалізація предметів
+  allIds.sort(() => Math.random() - 0.5).forEach(id => {
+    const item = document.createElement('div');
+    item.className = 'drag-item';
+    item.draggable = true;
+    item.dataset.id = id;
+    item.id = `item-${id}`;
+    item.onclick = () => playSnd(`${id}.mp3`);
+    
+    const img = document.createElement('img');
+    
+    // ПРАВИЛО РОЗШИРЕНЬ ЗМІНЕНО:
+    // Тепер усі картинки завантажуються як .png
+    let ext = 'png';
+    
+    img.src = `${id}.${ext}`;
+    
+    item.appendChild(img);
+    pool.appendChild(item);
+    item.addEventListener('dragstart', dragStart);
+  });
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('hover');
+  });
+
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('hover');
+    
+    const idStr = e.dataTransfer.getData('text/plain');
+    const element = document.getElementById(idStr);
+    if(!element) return;
+
+    const itemId = parseInt(element.dataset.id);
+
+    if (correctIds.includes(itemId)) {
+      element.classList.add('hidden-in-bag');
+      showFeedback('correct');
+      document.getElementById('pop').play();
+      gatheredCount++;
+      checkWin();
+    } else {
+      showFeedback('wrong');
+      element.style.borderColor = 'var(--bad)';
+      setTimeout(() => element.style.borderColor = '#e2e8f0', 500);
+    }
+  });
+
+  function showFeedback(type) {
+    const correctIcon = document.getElementById('icon-correct');
+    const wrongIcon = document.getElementById('icon-wrong');
+    correctIcon.style.display = 'none';
+    wrongIcon.style.display = 'none';
+    
+    const target = type === 'correct' ? correctIcon : wrongIcon;
+    target.style.display = 'block';
+    setTimeout(() => { target.style.display = 'none'; }, 2000);
+  }
+
+  function dragStart(e) { e.dataTransfer.setData('text/plain', e.target.id); }
+
+  function playSnd(file) {
+    const player = document.getElementById('audioPlayer');
+    player.src = file;
+    player.play().catch(() => {});
+  }
+
+  function checkWin() {
+    if (gatheredCount === correctIds.length) {
+      setTimeout(() => {
+        winMsg.style.display = 'block';
+        btnRestart.style.display = 'block';
+        
+        // Зникає через 5 секунд
+        setTimeout(() => {
+          winMsg.classList.add('fade-out');
+          setTimeout(() => {
+             winMsg.style.display = 'none';
+             winMsg.classList.remove('fade-out');
+          }, 1000);
+        }, 5000);
+      }, 500);
+    }
+  }
+</script>
+</body>
+</html>

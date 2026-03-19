@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Слова-втікачі</title>
+  <style>
+    :root{
+      --bg:#f0f7ff;
+      --card:#fff;
+      --accent:#4da6ff;
+      --shadow:rgba(0,0,0,.10);
+      --text:#2c3e50;
+      --line:rgba(44,62,80,.12);
+      --good:#22c55e;
+      --bad:#ef4444;
+    }
+
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:14px;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size:2.1rem;
+      font-weight:900;
+      text-align:center;
+      color: #1a5fb4;
+    }
+
+    .task{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      background:var(--card);
+      border:1px solid var(--line);
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+      padding:15px;
+      border-radius:16px;
+      max-width:900px;
+      width:100%;
+      margin-bottom:20px;
+      font-size:1.3rem;
+      font-weight:bold;
+      text-align:center;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:1000px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:20px;
+    }
+
+    @media (min-width: 800px){
+      .wrap{
+        grid-template-columns: 250px 1fr; /* Слова зліва | Речення справа */
+      }
+    }
+
+    /* LEFT: WORDS POOL */
+    .words-pool{
+      background:var(--card);
+      border:2px solid var(--accent);
+      border-radius:18px;
+      padding:15px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height: 300px;
+    }
+
+    .tile{
+      background:#fff;
+      border:2px solid #ddd;
+      border-radius:12px;
+      padding:10px 15px;
+      font-size:1.2rem;
+      font-weight:bold;
+      cursor:grab;
+      text-align:center;
+      box-shadow:0 4px 6px var(--shadow);
+      user-select:none;
+      transition: transform 0.2s;
+    }
+    .tile:active{cursor:grabbing; transform:scale(0.95);}
+    .tile.used{opacity:0.2; filter:grayscale(1); cursor:default;}
+
+    /* RIGHT: SENTENCES */
+    .sentences-list{
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+    }
+
+    .sentence-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:15px;
+      padding:20px;
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:8px;
+      font-size:1.3rem;
+      box-shadow:0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .drop-zone{
+      min-width:120px;
+      height:40px;
+      border:2px dashed var(--accent);
+      border-radius:8px;
+      background:rgba(77,166,255,0.05);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      vertical-align: middle;
+      transition:0.2s;
+    }
+    .drop-zone.over{background:rgba(34,197,94,0.2); border-color:var(--good);}
+    .drop-zone.locked{border:2px solid var(--good); background:rgba(34,197,94,0.1); color:var(--good); font-weight:bold;}
+
+    .bad-shake{animation:shake 0.45s ease-in-out; color:var(--bad)}
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-5px)}
+      75%{transform:translateX(5px)}
+    }
+
+    .win-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(255,255,255,0.9);
+      z-index:100;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      text-align:center;
+    }
+    .win-overlay h2{ font-size:3rem; color:var(--good); margin-bottom:20px; }
+
+    .btn-restart{
+      background:var(--good);
+      color:white;
+      border:none;
+      padding:15px 30px;
+      font-size:1.2rem;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Слова-втікачі</h1>
+
+  <div class="task">
+    Допоможи словам повернутися на свої місця! Перетягни слово у відповідне речення.
+  </div>
+
+  <div class="wrap">
+    <aside class="words-pool" id="pool"></aside>
+
+    <section class="sentences-list" id="list"></section>
+  </div>
+
+  <div class="win-overlay" id="win">
+    <h2>Чудово! ✨</h2>
+    <p style="font-size:1.5rem">Усі слова на своїх місцях!</p>
+    <button class="btn-restart" onclick="location.reload()">Грати ще раз</button>
+  </div>
+
+  <audio id="sound-ok" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+  <audio id="sound-no" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+  const data = [
+    { id: 1, textBefore: "У саду росте", textAfter: ".", answer: "яблуня" },
+    { id: 2, textBefore: "Мій", textAfter: "називається Мурчик.", answer: "кіт" },
+    { id: 3, textBefore: "У мого друга є", textAfter: "песик.", answer: "маленький" },
+    { id: 4, textBefore: "На мій день народження", textAfter: "спекла торт.", answer: "мама" },
+    { id: 5, textBefore: "Мені подобається", textAfter: "в теніс.", answer: "грати" }
+  ];
+
+  const $pool = document.getElementById("pool");
+  const $list = document.getElementById("list");
+  const $win = document.getElementById("win");
+  const sndOk = document.getElementById("sound-ok");
+  const sndNo = document.getElementById("sound-no");
+
+  function init() {
+    // Render words on the left
+    const shuffledAnswers = data.map(d => d.answer).sort(() => Math.random() - 0.5);
+    shuffledAnswers.forEach(word => {
+      const el = document.createElement("div");
+      el.className = "tile";
+      el.textContent = word;
+      el.draggable = true;
+      el.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text", word);
+        e.target.classList.add("dragging");
+      });
+      $pool.appendChild(el);
+    });
+
+    // Render sentences on the right
+    data.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "sentence-card";
+      
+      const before = document.createElement("span");
+      before.textContent = item.textBefore;
+      
+      const zone = document.createElement("div");
+      zone.className = "drop-zone";
+      zone.dataset.answer = item.answer;
+      
+      const after = document.createElement("span");
+      after.textContent = item.textAfter;
+
+      card.appendChild(before);
+      card.appendChild(zone);
+      card.appendChild(after);
+      $list.appendChild(card);
+
+      // Drag and Drop events
+      zone.addEventListener("dragover", (e) => e.preventDefault());
+      zone.addEventListener("dragenter", () => zone.classList.add("over"));
+      zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+      zone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        zone.classList.remove("over");
+        const droppedWord = e.dataTransfer.getData("text");
+        
+        if (droppedWord === zone.dataset.answer) {
+          zone.textContent = droppedWord;
+          zone.classList.add("locked");
+          sndOk.play();
+          markWordUsed(droppedWord);
+          checkWin();
+        } else {
+          sndNo.play();
+          zone.classList.add("bad-shake");
+          setTimeout(() => zone.classList.remove("bad-shake"), 500);
+        }
+      });
+    });
+  }
+
+  function markWordUsed(word) {
+    const tiles = document.querySelectorAll(".tile");
+    for (let t of tiles) {
+      if (t.textContent === word && !t.classList.contains("used")) {
+        t.classList.add("used");
+        t.draggable = false;
+        break;
+      }
+    }
+  }
+
+  function checkWin() {
+    const total = data.length;
+    const solved = document.querySelectorAll(".drop-zone.locked").length;
+    if (solved === total) {
+      setTimeout(() => $win.style.display = "flex", 600);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

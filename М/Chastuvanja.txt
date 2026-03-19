@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Гра "Частування"</title>
+  <style>
+    :root {
+      --bg: #fdfaf5;
+      --card: #ffffff;
+      --accent: #ff7e5f;
+      --shadow: rgba(0, 0, 0, .08);
+      --radius: 20px;
+      --bad: #f87171;
+      --good: #4ade80;
+      --text-main: #4a3728;
+    }
+
+    body {
+      margin: 0;
+      /* Шрифт Arial як основний */
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0 0 15px 0;
+      font-size: 2.8rem;
+      color: #e67e22;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Стилізація блоку питань - тепер по центру */
+    .discussion-box {
+      background: #fff;
+      padding: 25px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 15px var(--shadow);
+      margin-bottom: 30px;
+      text-align: center; /* Центрування тексту */
+      border-top: 8px solid #ffd84d; /* Змінив на верхню лінію для симетрії */
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .discussion-box strong {
+        font-size: 1.2rem;
+        display: block;
+        margin-bottom: 15px;
+    }
+
+    .discussion-box ul { 
+        list-style: none; 
+        padding: 0; 
+        margin: 0; 
+        display: inline-block; /* Для центрування списку */
+        text-align: left;
+    }
+
+    .discussion-box li { 
+        margin-bottom: 12px; 
+        font-size: 1.15rem; 
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Іконка звуку */
+    .sound-icon {
+        cursor: pointer;
+        font-size: 1.2rem;
+        filter: grayscale(1);
+        transition: 0.2s;
+    }
+    .sound-icon:hover { filter: grayscale(0); transform: scale(1.1); }
+
+    /* Блок головного зображення - по центру */
+    .main-illustration {
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto 40px auto;
+        border-radius: var(--radius);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        overflow: hidden;
+    }
+
+    .main-illustration img {
+        width: 100%;
+        display: block;
+    }
+
+    .task-desc {
+      font-size: 1.6rem;
+      font-weight: bold;
+      background: #ffd84d;
+      padding: 15px 40px;
+      border-radius: 50px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 900px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    button.control-btn {
+      border: 0;
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      font-size: 32px;
+      background: #fff;
+      cursor: pointer;
+      box-shadow: 0 6px 15px var(--shadow);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button.control-btn:hover { transform: scale(1.1); background: #fffcf0; }
+
+    .game-area {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 25px;
+      width: 100%;
+      padding: 20px;
+    }
+
+    .item {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 8px 20px var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 4px solid transparent;
+      height: 220px;
+    }
+
+    .item img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .item:hover { transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.1); }
+    .item.success { opacity: 0; transform: scale(0); pointer-events: none; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); border-color: transparent; }
+      20% { transform: translateX(-10px); border-color: var(--bad); background: #fff5f5; }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-10px); }
+      80% { transform: translateX(10px); }
+    }
+    .item.error { animation: shake 0.5s ease-in-out; }
+
+    .win-message {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 60px 100px;
+      border-radius: 40px;
+      font-size: 3.5rem;
+      font-weight: bold;
+      color: #2ecc71;
+      box-shadow: 0 30px 100px rgba(0,0,0,0.3);
+      z-index: 100;
+      text-align: center;
+      border: 10px solid #2ecc71;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Гра "Частування"</h1>
+  
+  <div class="discussion-box">
+    <strong>Питання для обговорення:</strong>
+    <ul>
+      <li><span class="sound-icon" onclick="playQuestion('1')">🔊</span> Уважно розгляньте малюнок.</li>
+      <li><span class="sound-icon" onclick="playQuestion('2')">🔊</span> Як ви думаєте, що святкують діти?</li>
+      <li><span class="sound-icon" onclick="playQuestion('3')">🔊</span> Які смаколики є на столі?</li>
+      <li><span class="sound-icon" onclick="playQuestion('4')">🔊</span> У яких словах чується звук [м]?</li>
+      <li><span class="sound-icon" onclick="playQuestion('5')">🔊</span> А в якій назві смаколика його немає?</li>
+    </ul>
+  </div>
+
+  <div class="main-illustration">
+      <img src="mal.png" alt="Святковий стіл">
+  </div>
+
+  <div class="task-desc">
+    <span class="sound-icon" onclick="playQuestion('zav')">🔊</span>
+    Натисніть на смаколики, які ви побачили на святковому столі.
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="control-btn" id="btnReset" title="Почати знову">🔄</button>
+</div>
+
+<div class="game-area">
+  <div class="board" id="board"></div>
+</div>
+
+<div id="winMsg" class="win-message">
+  Ура! <br> Завдання виконано!
+</div>
+
+<audio id="audio-1" src="1.mp3"></audio>
+<audio id="audio-2" src="2.mp3"></audio>
+<audio id="audio-3" src="3.mp3"></audio>
+<audio id="audio-4" src="4.mp3"></audio>
+<audio id="audio-5" src="5.mp3"></audio>
+<audio id="audio-zav" src="zav.mp3"></audio>
+
+<audio id="soundCorrect" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flick.ogg"></audio> 
+<audio id="soundWrong" src="https://actions.google.com/sounds/v1/ui/click_low.ogg"></audio>
+<audio id="soundWin" src="https://actions.google.com/sounds/v1/cartoon/clime_up_reverb_musical.ogg"></audio>
+
+<script>
+  const itemsData = [
+    { id: 1, img: '1.png', correct: true },
+    { id: 2, img: '2.png', correct: true },
+    { id: 3, img: '3.png', correct: true },
+    { id: 4, img: '4.png', correct: true },
+    { id: 5, img: '5.png', correct: true },
+    { id: 6, img: '6.png', correct: false },
+    { id: 7, img: '7.png', correct: false },
+    { id: 8, img: '8.png', correct: false }
+  ];
+
+  const board = document.getElementById('board');
+  const winMsg = document.getElementById('winMsg');
+  const soundCorrect = document.getElementById('soundCorrect');
+  const soundWrong = document.getElementById('soundWrong');
+  const soundWin = document.getElementById('soundWin');
+
+  let foundCount = 0;
+  const totalToFind = itemsData.filter(i => i.correct).length;
+
+  function initGame() {
+    board.innerHTML = '';
+    winMsg.style.display = 'none';
+    foundCount = 0;
+
+    [...itemsData].sort(() => 0.5 - Math.random()).forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = `<img src="${item.img}" alt="item">`;
+      el.addEventListener('click', () => handleItemClick(el, item));
+      board.appendChild(el);
+    });
+  }
+
+  function handleItemClick(element, data) {
+    if (element.classList.contains('success')) return;
+
+    if (data.correct) {
+      element.classList.add('success');
+      soundCorrect.currentTime = 0;
+      soundCorrect.play().catch(()=>{});
+      foundCount++;
+      if (foundCount === totalToFind) {
+        setTimeout(() => {
+          winMsg.style.display = 'block';
+          soundWin.play().catch(()=>{});
+        }, 500);
+      }
+    } else {
+      element.classList.add('error');
+      soundWrong.currentTime = 0;
+      soundWrong.play().catch(()=>{});
+      setTimeout(() => element.classList.remove('error'), 500);
+    }
+  }
+
+  function playQuestion(id) {
+      const audio = document.getElementById('audio-' + id);
+      if(audio) {
+          audio.currentTime = 0;
+          audio.play().catch(e => console.log("Потрібна взаємодія для звуку"));
+      }
+  }
+
+  document.getElementById('btnReset').onclick = initGame;
+  initGame();
+</script>
+</body>
+</html>

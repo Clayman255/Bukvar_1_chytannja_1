@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Вікторина "Хатка на тополі"</title>
+  <style>
+    :root {
+      --bg: #fdfcf0;
+      --accent: #4da6ff;
+      --success-border: #22c55e;
+      --error: #ef4444;
+      --text: #000000;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header { text-align: center; margin-bottom: 30px; }
+    h1 { color: #2980b9; margin-bottom: 10px; }
+    .task-desc {
+      font-size: 1.3rem; background: #fff; padding: 15px 25px;
+      border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      max-width: 800px; border-bottom: 5px solid var(--accent);
+    }
+
+    .quiz-container {
+      width: 100%;
+      max-width: 700px;
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .progress {
+      font-size: 1.1rem;
+      color: #64748b;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .question {
+      font-size: 26px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      line-height: 1.4;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .option-btn {
+      padding: 18px;
+      font-size: 22px;
+      background: #ffffff;
+      border: 3px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: bold;
+      color: var(--text);
+      outline: none;
+    }
+
+    .option-btn:hover {
+      background: #f8fafc;
+      border-color: var(--accent);
+    }
+
+    .option-btn.correct {
+      border-color: var(--success-border) !important;
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      cursor: default;
+    }
+
+    .option-btn.wrong {
+      border-color: var(--error) !important;
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-10px); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-10px); }
+      80% { transform: translateX(10px); }
+    }
+
+    .win-screen {
+      display: none;
+      text-align: center;
+    }
+
+    .win-screen h2 { font-size: 3rem; color: #16a34a; }
+
+    /* Оновлена кнопка "Зіграти ще раз" */
+    .reset-btn {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      background: #ffffff; /* Фон - білий */
+      color: #000000;    /* Шрифт - чорний */
+      border: 3px solid var(--accent); /* Контур синій */
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    .reset-btn:hover {
+      background-color: #f0f8ff;
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Вікторина</h1>
+  <div class="task-desc">Прочитай оповідання "Хатка на тополі" (за В. Чухлібом). Обери правильні відповіді.</div>
+</header>
+
+<div class="quiz-container" id="quiz">
+  <div class="progress" id="progress">Питання 1 з 5</div>
+  <div class="question" id="question-text"></div>
+  <div class="options-grid" id="options"></div>
+</div>
+
+<div class="win-screen" id="win-screen">
+  <h2>Молодець!</h2>
+  <p style="font-size: 1.5rem; font-weight: bold;">Ти чудово знаєш оповідання!</p>
+  <button class="reset-btn" onclick="location.reload()">Зіграти ще раз</button>
+</div>
+
+<script>
+  const quizData = [
+    {
+      q: "Під дахом чиєї хати зліпили гніздо ластівки?",
+      options: ["Миколчиної", "Василькової", "Олесевої", "Тарасикової"],
+      correct: "Миколчиної"
+    },
+    {
+      q: "Як звали друга Миколки?",
+      options: ["Петрик", "Тарасик", "Івасик", "Михайлик"],
+      correct: "Тарасик"
+    },
+    {
+      q: "Для яких птахів зробили домівку тато і Тарасик?",
+      options: ["Для синичок", "Для горобців", "Для шпаків", "Для ластівок"],
+      correct: "Для шпаків"
+    },
+    {
+      q: "Хто почепив шпаківню?",
+      options: ["Тато", "Миколка", "Тарасик", "Сусід"],
+      correct: "Тарасик"
+    },
+    {
+      q: "На яке дерево почепив шпаківню Тарасик?",
+      options: ["На дуб", "На тополю", "На яблуню", "На березу"],
+      correct: "На тополю"
+    }
+  ];
+
+  let currentStep = 0;
+
+  function loadQuestion() {
+    const qData = quizData[currentStep];
+    document.getElementById('progress').textContent = `Питання ${currentStep + 1} з ${quizData.length}`;
+    document.getElementById('question-text').textContent = qData.q;
+    
+    const optionsContainer = document.getElementById('options');
+    optionsContainer.innerHTML = '';
+
+    qData.options.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = opt;
+      btn.onclick = () => checkAnswer(opt, btn);
+      optionsContainer.appendChild(btn);
+    });
+  }
+
+  function checkAnswer(selectedOption, btn) {
+    const correctAnswer = quizData[currentStep].correct;
+
+    if (selectedOption === correctAnswer) {
+      document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
+      btn.classList.add('correct');
+      
+      setTimeout(() => {
+        currentStep++;
+        if (currentStep < quizData.length) {
+          loadQuestion();
+        } else {
+          showWin();
+        }
+      }, 1000);
+    } else {
+      btn.classList.add('wrong');
+      setTimeout(() => {
+        btn.classList.remove('wrong');
+      }, 400);
+    }
+  }
+
+  function showWin() {
+    document.getElementById('quiz').style.display = 'none';
+    document.getElementById('win-screen').style.display = 'block';
+  }
+
+  loadQuestion();
+</script>
+</body>
+</html>

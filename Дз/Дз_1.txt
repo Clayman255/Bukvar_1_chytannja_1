@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Відгадай!</title>
+  <style>
+    :root{
+      --bg:#fbf6ee; --card:#fff; --accent:#ffd84d; --shadow:rgba(0,0,0,.10);
+      --bad:#ef4444; --good:#22c55e; --text:#2c3e50; --orange:#d35400; --line:rgba(44,62,80,.10);
+    }
+    body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);
+      display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:10px}
+    
+    h1{margin:0 0 8px;font-size:2rem;color:var(--orange);text-align:center}
+
+    .task{font-size:1.1rem;font-weight:600;background:#fff;padding:8px 15px;border-radius:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,.05);display:inline-flex;align-items:center;gap:10px;text-align:center; margin-bottom: 25px;}
+
+    /* --- MAIN LAYOUT GRID --- */
+    .wrap {
+      width: 100%;
+      max-width: 1600px;
+      display: grid;
+      grid-template-columns: 1fr; 
+      gap: 20px;
+    }
+
+    @media (min-width: 1100px) {
+      .wrap {
+        grid-template-columns: 1fr 1.3fr 1fr; 
+        align-items: start;
+      }
+    }
+
+    /* --- RIDDLES STYLING --- */
+    .riddles-col {
+      display: grid;
+      grid-template-columns: 1fr; 
+      gap: 15px;
+    }
+
+    .riddle {
+      border-radius: 14px;
+      border: 1px solid rgba(0,0,0,.08);
+      background: #fff;
+      box-shadow: 0 4px 8px rgba(0,0,0,.04);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 220px;
+    }
+
+    .rtop { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px;}
+    
+    .rtext {
+      font-family: Arial, sans-serif;
+      font-size: 19.5px;
+      color: #000;
+      line-height: 1.3;
+      font-weight: 700;
+      white-space: pre-line;
+      width: 100%;
+    }
+
+    .drop {
+      border-radius: 12px;
+      border: 2px dashed rgba(44,62,80,.25);
+      background: #ffffff; /* Біле тло для зони відгадки */
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: .2s;
+      min-height: 120px;
+    }
+    .drop.over { border-color: rgba(34,197,94,.65); background: rgba(34,197,94,.05); }
+    .drop.locked { border-style: solid; border-color: rgba(34,197,94,.55); background: #ffffff; }
+
+    .chip {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+    .chip img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      max-height: 150px;
+    }
+    .chip.ok { cursor: default; }
+    .chip.bad { animation: shake .45s ease-in-out; filter: sepia(1) hue-rotate(-50deg) saturate(3); }
+
+    /* --- BANK STYLING --- */
+    .bank-wrapper {
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .bank {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center; 
+      gap: 15px;
+      width: 100%;
+    }
+
+    .item {
+      width: calc((100% - 30px) / 2);
+      max-width: 180px;
+      aspect-ratio: 1;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 10px 20px rgba(0,0,0,.12);
+      border: 4px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      user-select: none;
+      transition: transform .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    
+    .item:hover { transform: scale(1.1); z-index: 5; box-shadow: 0 15px 30px rgba(0,0,0,.15); }
+    .item img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+    .item.used { opacity: .1; filter: grayscale(1); cursor: default; transform: none; box-shadow: none; }
+
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+    
+    .win-message {
+      display: none; 
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.98);
+      color: #22c55e;
+      border: 5px solid #22c55e;
+      padding: 30px 50px;
+      font-size: 3rem;
+      font-weight: 800;
+      border-radius: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      z-index: 1000;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .restart-btn {
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+    }
+    .restart-btn:hover { transform: rotate(180deg) scale(1.1); }
+
+    @keyframes popIn {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Відгадай!</h1>
+
+  <div class="task">
+    <span>Розмісти зображення відгадки біля загадки.</span>
+  </div>
+
+  <div class="wrap">
+    <section id="riddles-left" class="riddles-col"></section>
+    <section class="bank-wrapper">
+      <div class="bank" id="bank"></div>
+    </section>
+    <section id="riddles-right" class="riddles-col"></section>
+  </div>
+
+  <div id="winMsg" class="win-message">
+    <span>Чудово!</span>
+    <button id="btnRestart" class="restart-btn" title="Зіграти ще раз">↻</button>
+  </div>
+
+  <audio id="ok" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+  <audio id="no" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+  const riddlesData = [
+    { id: 1, text: "Звати мене дзвінко,\nА дзвонити не можу.", answerImg: "1.png" },
+    { id: 2, text: "Всіх скликає на урок,\nА зовуть його …", answerImg: "2.png" },
+    { id: 3, text: "Вона на полі підросла,\nРусі коси заплела\nІ в маленькії хустинки\nСховала зерна-золотинки.", answerImg: "3.png" },
+    { id: 4, text: "Який є, таким покаже\nІ без слів про все розкаже.", answerImg: "4.png" }
+  ];
+
+  const imagesData = [
+    { img: "1.png" }, { img: "2.png" }, { img: "3.png" }, { img: "4.png" }
+  ];
+
+  const leftCol = document.getElementById("riddles-left");
+  const rightCol = document.getElementById("riddles-right");
+  const bankEl = document.getElementById("bank");
+  const ok = document.getElementById("ok");
+  const no = document.getElementById("no");
+  const winMsg = document.getElementById("winMsg");
+
+  const placed = new Map();
+  const used = new Set();
+  const shuffle = a => [...a].sort(()=>0.5-Math.random());
+
+  document.getElementById("btnRestart").addEventListener("click", init);
+
+  function init(){
+    placed.clear(); used.clear();
+    leftCol.innerHTML = ""; rightCol.innerHTML = ""; bankEl.innerHTML = "";
+    winMsg.style.display = "none";
+
+    const shuffledRiddles = shuffle(riddlesData);
+    shuffledRiddles.forEach((r, index) => {
+      const card = document.createElement("div");
+      card.className = "riddle";
+      card.innerHTML = `
+        <div class="rtop">
+          <div class="rtext">${esc(r.text)}</div>
+        </div>
+        <div class="drop" data-drop="${r.id}"></div>
+      `;
+      (index % 2 === 0 ? leftCol : rightCol).appendChild(card);
+    });
+
+    shuffle(imagesData).forEach(it=>{
+      const el = document.createElement("div");
+      el.className = "item";
+      el.draggable = true;
+      el.dataset.img = it.img;
+      el.innerHTML = `<img src="${it.img}" alt="">`;
+      el.addEventListener("dragstart",(e)=>{
+        if(el.classList.contains("used")) return e.preventDefault();
+        e.dataTransfer.setData("text/plain", it.img);
+      });
+      bankEl.appendChild(el);
+    });
+
+    document.querySelectorAll(".drop").forEach(zone=>{
+      zone.addEventListener("dragover",(e)=>{ 
+        e.preventDefault(); 
+        if(!zone.classList.contains("locked")) zone.classList.add("over"); 
+      });
+      zone.addEventListener("dragleave",()=>zone.classList.remove("over"));
+      zone.addEventListener("drop",(e)=>{
+        e.preventDefault(); zone.classList.remove("over");
+        if(zone.classList.contains("locked")) return;
+        const img = e.dataTransfer.getData("text/plain");
+        if(img) dropTo(Number(zone.dataset.drop), img, zone);
+      });
+    });
+  }
+
+  function dropTo(riddleId, img, zone){
+    if(used.has(img)) return;
+    const r = riddlesData.find(x=>x.id===riddleId);
+
+    if(placed.has(riddleId)){
+      const prev = placed.get(riddleId);
+      used.delete(prev);
+      markUsed(prev, false);
+    }
+
+    zone.innerHTML = "";
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.draggable = true;
+    chip.innerHTML = `<img src="${img}" alt="">`;
+    
+    chip.addEventListener("dragstart",(e)=>{
+      if(chip.classList.contains("ok")) return e.preventDefault();
+      e.dataTransfer.setData("text/plain", img);
+      e.dataTransfer.setData("fromRiddle", String(riddleId));
+    });
+    
+    zone.appendChild(chip);
+    placed.set(riddleId,img);
+    used.add(img);
+    markUsed(img, true);
+
+    if(img === r.answerImg){
+      chip.classList.add("ok");
+      zone.classList.add("locked");
+      ok.currentTime=0; ok.play().catch(()=>{});
+      if (document.querySelectorAll('.drop.locked').length === riddlesData.length) {
+        setTimeout(() => winMsg.style.display = "flex", 500);
+      }
+    }else{
+      chip.classList.add("bad");
+      no.currentTime=0; no.play().catch(()=>{});
+      setTimeout(()=>chip.classList.remove("bad"), 550);
+    }
+  }
+
+  function markUsed(img, val){
+    const el = [...document.querySelectorAll("#bank .item")].find(x=>x.dataset.img===img);
+    if(el) el.classList.toggle("used", !!val);
+  }
+
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+
+  init();
+</script>
+</body>
+</html>

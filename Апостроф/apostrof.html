@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Встав апостроф</title>
+  <style>
+    :root {
+      --bg: #fdf5e6; 
+      --card: #ffffff;
+      --accent: #4f46e5;
+      --shadow: rgba(0, 0, 0, 0.08);
+      --text-final: #000000;
+      --text-ui: #1e293b;
+      --line: #e2e8f0;
+      --good: #059669;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-ui);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(10px, 4vw, 30px);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.8rem, 5vw, 2.4rem);
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    /* Блок привітання вгорі */
+    .success-banner {
+      display: none;
+      background: #ecfdf5;
+      border: 2px solid var(--good);
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      text-align: center;
+      animation: slideDown 0.5s ease;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .success-banner h2 { margin: 0 0 10px; color: var(--good); font-size: 1.8rem; }
+
+    .task {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 15px 25px;
+      border-radius: 16px;
+      max-width: 800px;
+      width: 100%;
+      margin-bottom: 25px;
+      font-size: 1.15rem;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px var(--shadow);
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 900px) {
+      .wrap { grid-template-columns: 1fr 300px; align-items: start; }
+    }
+
+    .words-container { display: grid; gap: 12px; }
+
+    .word-row {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 80px;
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .cells { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+    .cell {
+      width: clamp(35px, 8vw, 46px);
+      height: clamp(45px, 10vw, 58px);
+      border-radius: 8px;
+      background: #f1f5f9; 
+      border: 2px dashed #94a3b8; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.3rem, 4vw, 1.7rem);
+      font-weight: 700;
+      user-select: none;
+    }
+
+    .cell.static, .drop.locked {
+      border-style: solid; 
+      border-color: #cbd5e1;
+      background: #fff;
+    }
+
+    .drop.over { border-color: var(--accent); background: #eef2ff; }
+
+    .result {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 800;
+      color: var(--text-final);
+      display: none;
+      letter-spacing: 1px;
+    }
+
+    .sidebar {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 25px;
+      position: sticky;
+      top: 20px;
+      text-align: center;
+      box-shadow: 0 10px 15px -3px var(--shadow);
+    }
+
+    .tile {
+      width: 90px;
+      height: 90px;
+      border-radius: 18px;
+      background: #fff;
+      border: 4px solid var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      font-weight: 900;
+      cursor: grab;
+      touch-action: none;
+      transition: 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    
+    .tile.dragging { opacity: 0.5; transform: scale(1.1); }
+
+    .btn-restart {
+      border: 0; background: var(--accent); color: #fff;
+      font-size: 1rem; font-weight: 700; padding: 10px 25px;
+      border-radius: 50px; cursor: pointer; margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Встав апостроф</h1>
+
+  <div id="success-banner" class="success-banner">
+    <h2>Усі апострофи розкладено правильно.</h2>
+    <button class="btn-restart" onclick="location.reload()">Почати спочатку</button>
+  </div>
+
+  <div class="task" id="instruction">
+    Розмісти апостроф у порожніх клітинках та прочитай слова.
+  </div>
+
+  <div class="wrap">
+    <div class="words-container" id="words"></div>
+    
+    <aside class="sidebar" id="sidebar">
+      <p style="margin-top: 0; font-weight: 700; color: #64748b;">Тягни апостроф:</p>
+      <div class="tile" id="tile-apos" draggable="true">’</div>
+    </aside>
+  </div>
+
+<script>
+  const APOS = "’";
+  const wordsData = [
+    { id: 1, head: "м", tail: "я ч", final: "м’яч" },
+    { id: 2, head: "в", tail: "ю н", final: "в’юн" },
+    { id: 3, head: "з д о р о в", tail: "я", final: "здоров’я" },
+    { id: 4, head: "х л о п", tail: "я", final: "хлоп’я" },
+    { id: 5, head: "в", tail: "є т ь с я", final: "в’ється" },
+    { id: 6, head: "п", tail: "є с а", final: "п’єса" },
+    { id: 7, head: "В а л е р", tail: "я н", final: "Валер’ян" },
+    { id: 8, head: "н а  п о д в і р", tail: "ї", final: "на подвір’ї" },
+    { id: 9, head: "р о з і б", tail: "ю", final: "розіб’ю" }
+  ];
+
+  const container = document.getElementById("words");
+  const tile = document.getElementById("tile-apos");
+  const banner = document.getElementById("success-banner");
+  const instruction = document.getElementById("instruction");
+
+  function render() {
+    wordsData.forEach(w => {
+      const row = document.createElement("div");
+      row.className = "word-row";
+      const cellsWrap = document.createElement("div");
+      cellsWrap.className = "cells";
+
+      w.head.split(" ").forEach(ch => {
+        const c = document.createElement("div");
+        if (ch === "") { c.style.width = "12px"; } 
+        else { c.className = "cell static"; c.textContent = ch; }
+        cellsWrap.appendChild(c);
+      });
+
+      const drop = document.createElement("div");
+      drop.className = "cell drop";
+      cellsWrap.appendChild(drop);
+
+      w.tail.split(" ").forEach(ch => {
+        const c = document.createElement("div");
+        c.className = "cell static"; c.textContent = ch;
+        cellsWrap.appendChild(c);
+      });
+
+      const res = document.createElement("div");
+      res.className = "result"; res.textContent = w.final;
+
+      row.append(cellsWrap, res);
+      container.appendChild(row);
+    });
+    initLogic();
+  }
+
+  function initLogic() {
+    tile.addEventListener("dragstart", e => e.dataTransfer.setData("text", APOS));
+    const drops = document.querySelectorAll(".drop");
+
+    drops.forEach(zone => {
+      zone.addEventListener("dragover", e => e.preventDefault());
+      zone.addEventListener("dragenter", () => zone.classList.add("over"));
+      zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+      zone.addEventListener("drop", e => { e.preventDefault(); completeWord(zone); });
+    });
+
+    // Touch Support
+    let currentTarget = null;
+    tile.addEventListener("pointerdown", e => { tile.classList.add("dragging"); tile.setPointerCapture(e.pointerId); });
+    tile.addEventListener("pointermove", e => {
+      if (!tile.classList.contains("dragging")) return;
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      drops.forEach(d => d.classList.remove("over"));
+      currentTarget = target?.closest(".drop");
+      if (currentTarget && !currentTarget.classList.contains("locked")) currentTarget.classList.add("over");
+    });
+    tile.addEventListener("pointerup", e => {
+      tile.classList.remove("dragging");
+      if (currentTarget) completeWord(currentTarget);
+      currentTarget = null;
+    });
+  }
+
+  function completeWord(zone) {
+    if (zone.classList.contains("locked")) return;
+    zone.textContent = APOS;
+    zone.classList.add("locked");
+    zone.classList.remove("over");
+    
+    const row = zone.closest(".word-row");
+    setTimeout(() => {
+      row.querySelector(".cells").style.display = "none";
+      row.querySelector(".result").style.display = "block";
+      checkWin();
+    }, 500);
+  }
+
+  function checkWin() {
+    const solved = document.querySelectorAll(".drop.locked").length;
+    if (solved === wordsData.length) {
+      banner.style.display = "block";
+      instruction.style.display = "none";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

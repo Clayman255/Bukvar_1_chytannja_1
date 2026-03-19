@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Утвори склади</title>
+  <style>
+    :root {
+      --bg: #fdfaf0;
+      --card: #ffffff;
+      --accent: #ffcb2e;
+      --accent-soft: #fff4d1;
+      --shadow: rgba(0, 0, 0, 0.1);
+      --line: rgba(74, 58, 42, 0.15);
+      --good: #4caf50;
+      --bad: #f44336;
+      --border-radius: 12px;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    #congrats-text {
+      visibility: hidden;
+      color: #2e7d32;
+      font-size: 3rem;
+      font-weight: 900;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      height: 60px;
+    }
+
+    h1 {
+      margin: 5px 0 15px;
+      font-size: 2.5rem;
+      color: #000;
+      font-weight: 900;
+    }
+
+    .task {
+      background: var(--card);
+      border: 2px solid var(--accent);
+      padding: 15px 25px;
+      border-radius: 20px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      box-shadow: 0 4px 10px var(--shadow);
+      max-width: 850px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .snd-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: transform 0.1s;
+      box-shadow: 0 2px 5px var(--shadow);
+    }
+    .snd-btn:active { transform: scale(0.9); }
+
+    .table-container {
+      width: 100%;
+      max-width: 950px;
+      overflow-x: auto;
+      background: var(--card);
+      padding: 15px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px var(--shadow);
+      border: 1px solid var(--line);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 8px;
+    }
+
+    th, td {
+      width: 100px;
+      height: 85px;
+      text-align: center;
+      vertical-align: middle;
+      border-radius: var(--border-radius);
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: #000;
+      background: #fff;
+    }
+
+    th {
+      background: #fff;
+      border: 2px solid var(--accent);
+      color: #d35400;
+    }
+
+    .row-head {
+      background: #fff;
+      border: 2px solid #03a9f4;
+      color: #0277bd;
+      width: 80px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #ccc;
+      transition: 0.2s;
+    }
+
+    .drop-zone.over {
+      border-color: var(--good);
+      background: #f1f8e9;
+    }
+
+    .drop-zone.correct {
+      border: 2px solid var(--good);
+      background: #fff;
+      animation: pop 0.3s ease-out;
+    }
+
+    .drop-zone.wrong {
+      border-color: var(--bad);
+      animation: shake 0.4s;
+    }
+
+    .pool {
+      margin-top: 35px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 800px;
+    }
+
+    .tile {
+      width: 75px;
+      height: 75px;
+      background: #fff;
+      border: 3px solid var(--accent);
+      border-radius: 15px;
+      display: flex;
+      align-items:center;
+      justify-content: center;
+      font-size: 2.2rem;
+      font-weight: 900;
+      cursor: grab;
+      box-shadow: 0 5px 0 var(--accent);
+      user-select: none;
+      color: #000;
+    }
+
+    .tile:active { transform: translateY(4px); box-shadow: none; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.8); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .win-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.1);
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 40px;
+      pointer-events: none;
+    }
+    
+    .btn-reset {
+      pointer-events: auto;
+      padding: 15px 40px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="congrats-text">Молодець! 🎉</div>
+
+  <h1>Утвори склади</h1>
+
+  <div class="task">
+    <button class="snd-btn" onclick="document.getElementById('au-main').play()">🔊</button>
+    <span>Утвори і прочитай склади. Порівняй вимову приголосних звуків.</span>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr id="header-row"></tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <div class="pool" id="letter-pool"></div>
+
+  <div class="win-overlay" id="win-screen">
+    <button class="btn-reset" onclick="location.reload()">Грати знову</button>
+  </div>
+
+  <audio id="au-main" src="au.mp3"></audio>
+  <audio id="snd-ok" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+  <audio id="snd-no" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+  const columns = ["", "р", "с", "н", "л", "з", "т", "д"];
+  const rows = [{ label: "є" }, { label: "е" }];
+
+  const headerRow = document.getElementById('header-row');
+  const tableBody = document.getElementById('table-body');
+  const pool = document.getElementById('letter-pool');
+  const winScreen = document.getElementById('win-screen');
+  const congratsText = document.getElementById('congrats-text');
+  
+  let solvedCount = 0;
+  const totalToSolve = (columns.length - 1) * rows.length - 2; 
+
+  function init() {
+    columns.forEach(col => {
+      const th = document.createElement('th');
+      th.textContent = col;
+      headerRow.appendChild(th);
+    });
+
+    rows.forEach(rowData => {
+      const tr = document.createElement('tr');
+      const tdLabel = document.createElement('td');
+      tdLabel.className = "row-head";
+      tdLabel.textContent = rowData.label;
+      tr.appendChild(tdLabel);
+
+      for(let i = 1; i < columns.length; i++) {
+        const td = document.createElement('td');
+        const syllable = columns[i] + rowData.label;
+        
+        if (i === 1) { 
+          td.textContent = syllable;
+          td.style.border = "2px solid var(--line)";
+        } else {
+          td.className = "drop-zone";
+          td.dataset.cons = columns[i];
+          td.dataset.vow = rowData.label;
+          
+          td.addEventListener('dragover', e => e.preventDefault());
+          td.addEventListener('dragenter', e => td.classList.add('over'));
+          td.addEventListener('dragleave', () => td.classList.remove('over'));
+          td.addEventListener('drop', handleDrop);
+        }
+        tr.appendChild(td);
+      }
+      tableBody.appendChild(tr);
+    });
+
+    let lettersNeeded = [];
+    document.querySelectorAll('.drop-zone').forEach(dz => {
+      lettersNeeded.push(dz.dataset.cons);
+    });
+    
+    lettersNeeded.sort(() => Math.random() - 0.5).forEach(char => {
+      const tile = document.createElement('div');
+      tile.className = "tile";
+      tile.textContent = char;
+      tile.draggable = true;
+      tile.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', char);
+      });
+      pool.appendChild(tile);
+    });
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    const zone = e.currentTarget;
+    zone.classList.remove('over');
+    if (zone.classList.contains('correct')) return;
+
+    const draggedChar = e.dataTransfer.getData('text/plain');
+    
+    if (draggedChar === zone.dataset.cons) {
+      zone.textContent = draggedChar + zone.dataset.vow;
+      zone.classList.add('correct');
+      document.getElementById('snd-ok').play();
+      
+      const tiles = document.querySelectorAll('.tile');
+      for (let t of tiles) {
+        if (t.textContent === draggedChar && t.style.visibility !== 'hidden') {
+          t.style.visibility = 'hidden'; 
+          break;
+        }
+      }
+      
+      solvedCount++;
+      if (solvedCount === totalToSolve) {
+        congratsText.style.visibility = 'visible';
+        winScreen.style.display = 'flex';
+      }
+    } else {
+      zone.classList.add('wrong');
+      document.getElementById('snd-no').play();
+      setTimeout(() => zone.classList.remove('wrong'), 400);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

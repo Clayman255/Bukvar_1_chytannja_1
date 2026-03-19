@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Гра "Чарівні слова"</title>
+  <style>
+    :root {
+      --bg: #fbf6ee;
+      --accent: #4da6ff;
+      --bad: #ef4444;
+      --text-main: #000000; /* Чорний текст для слів */
+      --good: #16a34a;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: #2c3e50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header { text-align: center; margin-bottom: 10px; }
+    h1 { color: #2980b9; margin-bottom: 5px; font-size: 2rem; }
+
+    .task-desc {
+      font-size: 1.2rem;
+      background: #fff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+      border: 2px solid #edc9af;
+      max-width: 800px;
+      text-align: center;
+    }
+
+    .toolbar { margin-bottom: 10px; }
+    
+    button.tool-btn {
+      border: 0; border-radius: 50%; width: 45px; height: 45px;
+      font-size: 20px; background: var(--accent); cursor: pointer;
+      color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.1s;
+    }
+
+    .game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    #line-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .game-container {
+      display: grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap: 30px;
+      position: relative;
+      z-index: 6;
+      align-items: center;
+    }
+
+    .column { display: flex; flex-direction: column; gap: 15px; }
+    
+    /* Центруємо плашки зі словами в центральній колонці */
+    #col-center-words { align-items: center; }
+
+    .item {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 1.38rem; /* Збільшено на 15% */
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+      border: 3px solid transparent;
+      transition: all 0.2s;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      color: var(--text-main); /* Чорний колір */
+    }
+
+    /* Зменшуємо довжину плашок зі словами на 40% (залишається 60%) */
+    #col-center-words .item {
+      width: 60%;
+    }
+
+    .item-img {
+      padding: 8px;
+      height: 280px;
+      width: 100%; /* Картинки займають всю ширину своєї колонки */
+    }
+
+    .item-img img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+
+    .item.selected { border-color: var(--accent); background-color: #eef8ff; }
+    .item.matched { cursor: default; }
+    .item.error { animation: shake 0.4s; border-color: var(--bad); }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    .win-message {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); background: white;
+      padding: 30px 50px; border-radius: 20px; font-size: 2rem;
+      font-weight: bold; color: var(--good); border: 5px solid var(--good);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 100; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Гра "Чарівні слова"</h1>
+  <div class="task-desc">З'єднай стрілками ввічливі слова та зображення ситуації, коли їх потрібно сказати.</div>
+</header>
+
+<div class="toolbar">
+  <button id="btnReset" class="tool-btn" title="Почати спочатку">🔄</button>
+</div>
+
+<div class="game-wrapper">
+  <svg id="line-canvas">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="context-stroke" />
+      </marker>
+    </defs>
+  </svg>
+
+  <div class="game-container">
+    <div class="column" id="col-left-img"></div>
+    <div class="column" id="col-center-words"></div>
+    <div class="column" id="col-right-img"></div>
+  </div>
+</div>
+
+<div id="winMsg" class="win-message">Молодець! <br> Ти знаєш усі чарівні слова!</div>
+
+<script>
+  const wordsData = [
+    { text: 'Добрий день!', id: 1 },
+    { text: 'Добрий ранок!', id: 1 },
+    { text: 'До побачення!', id: 2 },
+    { text: 'Щасливо!', id: 2 },
+    { text: 'Дякую!', id: 3 },
+    { text: 'Будь ласка!', id: 3 },
+    { text: 'Вибач!', id: 4 },
+    { text: 'Даруй!', id: 4 }
+  ];
+
+  const imagesData = [
+    { src: 'greeting.png', id: 1 },
+    { src: 'farewell.png', id: 2 },
+    { src: 'thanks.png', id: 3 },
+    { src: 'apology.png', id: 4 }
+  ];
+
+  const colors = {
+    1: '#4da6ff',
+    2: '#22c55e',
+    3: '#f59e0b',
+    4: '#e74c3c'
+  };
+  
+  let selectedWord = null;
+  let matchedCount = 0;
+
+  function initGame() {
+    const colLeft = document.getElementById('col-left-img');
+    const colCenter = document.getElementById('col-center-words');
+    const colRight = document.getElementById('col-right-img');
+    const canvas = document.getElementById('line-canvas');
+    const winMsg = document.getElementById('winMsg');
+
+    colLeft.innerHTML = '';
+    colCenter.innerHTML = '';
+    colRight.innerHTML = '';
+    canvas.innerHTML = canvas.querySelector('defs').outerHTML;
+    matchedCount = 0;
+    selectedWord = null;
+    winMsg.style.display = 'none';
+
+    const shuffledImages = [...imagesData].sort(() => Math.random() - 0.5);
+    shuffledImages.forEach((img, index) => {
+      const div = document.createElement('div');
+      div.className = 'item item-img';
+      div.dataset.pairId = img.id;
+      div.innerHTML = `<img src="${img.src}" alt="Ситуація">`;
+      div.onclick = () => handleImageClick(div);
+      
+      if (index < 2) colLeft.appendChild(div);
+      else colRight.appendChild(div);
+    });
+
+    [...wordsData].sort(() => Math.random() - 0.5).forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.textContent = item.text;
+      div.dataset.pairId = item.id;
+      div.onclick = () => handleWordClick(div);
+      colCenter.appendChild(div);
+    });
+  }
+
+  function handleWordClick(div) {
+    if (div.classList.contains('matched')) return;
+    document.querySelectorAll('#col-center-words .item').forEach(i => i.classList.remove('selected'));
+    div.classList.add('selected');
+    selectedWord = div;
+  }
+
+  function handleImageClick(div) {
+    if (!selectedWord) return;
+
+    if (div.dataset.pairId === selectedWord.dataset.pairId) {
+      const color = colors[div.dataset.pairId];
+      selectedWord.classList.add('matched');
+      selectedWord.style.borderColor = color;
+      selectedWord.style.backgroundColor = color + '15';
+      
+      drawArrow(selectedWord, div, color);
+      
+      selectedWord.classList.remove('selected');
+      selectedWord = null;
+      matchedCount++;
+
+      if (matchedCount === wordsData.length) {
+        setTimeout(() => { document.getElementById('winMsg').style.display = 'block'; }, 500);
+      }
+    } else {
+      div.classList.add('error');
+      setTimeout(() => div.classList.remove('error'), 400);
+    }
+  }
+
+  function drawArrow(wordEl, imgEl, color) {
+    const rectW = wordEl.getBoundingClientRect();
+    const rectI = imgEl.getBoundingClientRect();
+    const wrapperRect = document.querySelector('.game-wrapper').getBoundingClientRect();
+    const canvas = document.getElementById('line-canvas');
+
+    let x1, x2;
+    if (rectI.left < rectW.left) {
+      x1 = rectW.left - wrapperRect.left;
+      x2 = rectI.right - wrapperRect.left;
+    } else {
+      x1 = rectW.right - wrapperRect.left;
+      x2 = rectI.left - wrapperRect.left;
+    }
+
+    const y1 = rectW.top + rectW.height / 2 - wrapperRect.top;
+    const y2 = rectI.top + rectI.height / 2 - wrapperRect.top;
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', color); line.setAttribute('stroke-width', '4');
+    line.setAttribute('marker-end', 'url(#arrowhead)');
+    canvas.appendChild(line);
+  }
+
+  document.getElementById('btnReset').onclick = initGame;
+  window.addEventListener('resize', initGame);
+  initGame();
+</script>
+</body>
+</html>

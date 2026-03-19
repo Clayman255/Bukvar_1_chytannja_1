@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Встанови відповідність</title>
+  <style>
+    :root {
+      --bg: #fdf5e6; 
+      --accent: #4f46e5;
+      --bad: #ef4444;
+      --text-main: #1e293b;
+      --card: #ffffff;
+      --good: #059669;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      text-align: center; 
+      margin-bottom: 30px; 
+      width: 100%; 
+      max-width: 900px; 
+    }
+
+    h1 { font-size: 2.2rem; font-weight: 900; color: #0f172a; margin: 0 0 15px; }
+
+    /* Блок успіху вгорі посередині */
+    .win-banner {
+      display: none;
+      background: #ecfdf5;
+      border: 3px solid var(--good);
+      border-radius: 16px;
+      padding: 20px 40px;
+      width: fit-content;
+      max-width: 90%;
+      margin: 0 auto 25px auto;
+      text-align: center;
+      box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.2);
+      animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @keyframes bounceIn {
+      from { opacity: 0; transform: scale(0.8) translateY(-20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .win-banner h2 { 
+      margin: 0; 
+      color: var(--good); 
+      font-size: clamp(1.4rem, 4vw, 2rem); 
+      font-weight: 800; 
+    }
+
+    .task-desc {
+      font-size: 1.2rem;
+      background: var(--card);
+      padding: 15px 25px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+      width: 100%;
+    }
+
+    .toolbar { display: flex; gap: 15px; margin-bottom: 20px; }
+    
+    .tool-btn {
+      border: 0; border-radius: 50%; width: 50px; height: 50px;
+      font-size: 22px; background: var(--card); cursor: pointer;
+      color: var(--accent); display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: all 0.2s;
+    }
+    .tool-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+    .tool-btn:active { transform: scale(0.95); }
+
+    .game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 10px;
+    }
+
+    #line-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .game-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(40px, 15vw, 200px);
+      position: relative;
+      z-index: 6;
+    }
+
+    .column { display: flex; flex-direction: column; gap: 20px; }
+
+    .item {
+      background: var(--card);
+      border-radius: 14px;
+      padding: clamp(10px, 3vw, 20px);
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 3px solid transparent;
+      transition: all 0.2s;
+      user-select: none;
+      min-height: 85px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+    }
+
+    .item.selected { border-color: var(--accent); background-color: #eef2ff; transform: scale(1.02); }
+    .item.matched { cursor: default; border-style: solid; background-color: rgba(255,255,255,0.7); }
+    .item.error { animation: shake 0.4s; border-color: var(--bad); }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Встанови відповідність</h1>
+  
+  <div id="success-banner" class="win-banner">
+    <h2>Ура! Відповідність встановлено.</h2>
+  </div>
+
+  <div class="task-desc" id="task-text">З'єднай стрілками висловлювання та їх значення.</div>
+</header>
+
+<div class="toolbar">
+  <button id="btnReset" class="tool-btn" title="Почати спочатку">🔄</button>
+</div>
+
+<div class="game-wrapper">
+  <svg id="line-canvas">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="context-stroke" />
+      </marker>
+    </defs>
+  </svg>
+
+  <div class="game-container">
+    <div class="column" id="col-left"></div>
+    <div class="column" id="col-right"></div>
+  </div>
+</div>
+
+<script>
+  const APOS = "’";
+  const pairsData = [
+    { left: `За тридев${APOS}ять земель`, right: 'дуже далеко', id: 1 },
+    { left: `Зв${APOS}язати руки й ноги`, right: 'обмежити свободу дій', id: 2 },
+    { left: `Рісочки в роті не було`, right: `не з${APOS}їсти нічого`, id: 3 }
+  ];
+
+  const colors = ['#4f46e5', '#059669', '#d97706'];
+  let selectedLeft = null;
+  let matchedCount = 0;
+
+  const colLeft = document.getElementById('col-left');
+  const colRight = document.getElementById('col-right');
+  const canvas = document.getElementById('line-canvas');
+  const successBanner = document.getElementById('success-banner');
+  const taskText = document.getElementById('task-text');
+
+  function initGame() {
+    colLeft.innerHTML = '';
+    colRight.innerHTML = '';
+    const defs = canvas.querySelector('defs').outerHTML;
+    canvas.innerHTML = defs;
+    
+    matchedCount = 0;
+    selectedLeft = null;
+    successBanner.style.display = 'none';
+    taskText.style.display = 'block';
+
+    const leftItems = [...pairsData].sort(() => Math.random() - 0.5);
+    const rightItems = [...pairsData].sort(() => Math.random() - 0.5);
+
+    leftItems.forEach((pair) => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.textContent = pair.left;
+      div.dataset.id = pair.id;
+      div.dataset.color = colors[(pair.id - 1) % colors.length];
+      div.onclick = () => selectLeft(div);
+      colLeft.appendChild(div);
+    });
+
+    rightItems.forEach(pair => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.textContent = pair.right;
+      div.dataset.id = pair.id;
+      div.onclick = () => selectRight(div);
+      colRight.appendChild(div);
+    });
+  }
+
+  function selectLeft(el) {
+    if (el.classList.contains('matched')) return;
+    document.querySelectorAll('#col-left .item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedLeft = el;
+  }
+
+  function selectRight(el) {
+    if (el.classList.contains('matched') || !selectedLeft) return;
+
+    if (el.dataset.id === selectedLeft.dataset.id) {
+      const color = selectedLeft.dataset.color;
+      el.classList.add('matched');
+      selectedLeft.classList.add('matched');
+      
+      el.style.borderColor = color;
+      selectedLeft.style.borderColor = color;
+      el.style.backgroundColor = color + '08';
+      selectedLeft.style.backgroundColor = color + '08';
+
+      drawArrow(selectedLeft, el, color);
+      
+      selectedLeft.classList.remove('selected');
+      selectedLeft = null;
+      matchedCount++;
+
+      if (matchedCount === pairsData.length) {
+        setTimeout(() => {
+          successBanner.style.display = 'block';
+          taskText.style.display = 'none';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 400);
+      }
+    } else {
+      el.classList.add('error');
+      setTimeout(() => el.classList.remove('error'), 400);
+    }
+  }
+
+  function drawArrow(startEl, endEl, color) {
+    const rect1 = startEl.getBoundingClientRect();
+    const rect2 = endEl.getBoundingClientRect();
+    const wrapperRect = document.querySelector('.game-wrapper').getBoundingClientRect();
+    
+    const x1 = rect1.right - wrapperRect.left;
+    const y1 = rect1.top + rect1.height / 2 - wrapperRect.top;
+    const x2 = rect2.left - wrapperRect.left;
+    const y2 = rect2.top + rect2.height / 2 - wrapperRect.top;
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('stroke', color);
+    line.setAttribute('stroke-width', '4');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('marker-end', 'url(#arrowhead)');
+    canvas.appendChild(line);
+  }
+
+  window.addEventListener('resize', () => {
+    if (matchedCount > 0) initGame();
+  });
+
+  document.getElementById('btnReset').onclick = initGame;
+  initGame();
+</script>
+</body>
+</html>

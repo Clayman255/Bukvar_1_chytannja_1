@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Встав букву - Ж</title>
+  <style>
+    :root{
+      --bg: #f0f4f8;
+      --card-bg: #ffffff;
+      --accent: #ffd84d;
+      --text: #333333;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --shadow: rgba(0,0,0,0.1);
+    }
+
+    body{
+      margin: 0;
+      font-family: Arial, sans-serif; /* Шрифт Arial */
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1{
+      margin: 0 0 15px;
+      font-size: 2.2rem;
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    /* Верхня панель завдання */
+    .task{
+      background: var(--card-bg);
+      padding: 15px 25px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      max-width: 900px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .snd{
+      background: var(--accent);
+      border: none;
+      width: 45px; height: 45px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px var(--shadow);
+      transition: transform 0.1s;
+    }
+    .snd:active{ transform: scale(0.95); }
+
+    .again{
+      background: #e0f2fe;
+      color: #0284c7;
+      border: 2px solid #bae6fd;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      display: none; /* ховаємо до перемоги */
+    }
+    .again:hover{ background: #bae6fd; }
+
+    .doneText{
+      color: var(--good);
+      display: none;
+      font-weight: bold;
+    }
+
+    /* Основна сітка */
+    .wrap{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    @media (min-width: 900px){
+      .wrap{
+        grid-template-columns: 2fr 1fr; /* Слова зліва, букви справа */
+        align-items: start;
+      }
+    }
+
+    /* ЛІВА ЧАСТИНА - СЛОВА */
+    .words{
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .wordRow{
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 15px;
+      box-shadow: 0 4px 12px var(--shadow);
+      display: flex;
+      justify-content: center; /* Центрування слова */
+      align-items: center;
+      min-height: 100px;
+    }
+
+    /* Контейнер для літер слова (в один рядок) */
+    .wordContainer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: wrap; 
+    }
+
+    .cell{
+      width: 55px;
+      height: 70px;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      user-select: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    /* Місце для перетягування */
+    .drop{
+      background: #fffbeb; /* світло-жовтий */
+      border: 3px dashed #fcd34d;
+      color: transparent;
+      transition: all 0.2s;
+    }
+    .drop.over{
+      background: #dcfce7;
+      border-color: var(--good);
+      transform: scale(1.05);
+    }
+    .drop.locked{
+      border-style: solid;
+      border-color: var(--good);
+      background: #f0fdf4;
+      color: var(--text);
+    }
+
+    .placed{
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .placed.bad{
+      color: var(--bad);
+      animation: shake 0.4s ease-in-out;
+    }
+    @keyframes shake{
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .resultFull{
+      display: none;
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: var(--good);
+    }
+
+    /* ПРАВА ЧАСТИНА - БУКВИ */
+    .letters{
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px var(--shadow);
+      position: sticky;
+      top: 20px;
+    }
+
+    .lettersGrid{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      justify-items: center;
+    }
+
+    .colTitle{
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 5px;
+    }
+
+    .tile{
+      width: 80px;
+      height: 70px;
+      background: #fff;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      cursor: grab;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      transition: transform 0.1s, opacity 0.2s;
+      user-select: none;
+    }
+    .tile:active{
+      cursor: grabbing;
+      transform: scale(0.95);
+    }
+    .tile.used{
+      opacity: 0.1;
+      pointer-events: none;
+      filter: grayscale(100%);
+    }
+
+    /* Модальне вікно перемоги */
+    .win{
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.95);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 20px;
+    }
+    .win .txt{
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--good);
+    }
+    .btn-restart{
+      background: var(--good);
+      color: #fff;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(34,197,94,0.4);
+      transition: transform 0.1s;
+    }
+    .btn-restart:active{ transform: scale(0.98); }
+
+    /* Адаптив для мобільних */
+    @media (max-width: 600px){
+      .cell, .drop { width: 38px; height: 50px; font-size: 1.4rem; }
+      .tile { width: 60px; height: 50px; font-size: 1.8rem; }
+      h1 { font-size: 1.6rem; }
+      .task { padding: 10px; font-size: 1rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Встав букву</h1>
+
+  <div class="task">
+    <button class="snd" data-a="au" title="Прослухати завдання">🔊</button>
+    
+    <button class="again" id="btnAgain" type="button">Показати слова</button>
+    <span class="doneText" id="doneText">Чудова робота!</span>
+
+    <span>Встав пропущену букву "Ж" або "ж".</span>
+  </div>
+
+  <div class="wrap">
+    <section class="words" id="words"></section>
+
+    <aside class="letters">
+      <div class="lettersGrid" id="lettersGrid"></div>
+    </aside>
+  </div>
+
+  <div class="win" id="win">
+    <div class="txt">Ура! Усі слова складено!</div>
+    <button class="btn-restart" id="restart">Зіграти ще раз</button>
+  </div>
+
+  <audio id="au" src="au.mp3"></audio>
+  <audio id="ok" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+  <audio id="no" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+  // Дані слів: prefix (до пропуску), suffix (після пропуску), answer (правильна буква), final (ціле слово)
+  const words = [
+    { id: 1, prefix: [], suffix: ["о","р","ж","и","н","и"], answer: "ж", final: "жоржини" },
+    { id: 2, prefix: [], suffix: ["а","с","м","и","н"], answer: "ж", final: "жасмин" },
+    { id: 3, prefix: ["к","о","р"], suffix: ["и","к"], answer: "ж", final: "коржик" },
+    { id: 4, prefix: [], suffix: ["у","р","н","а","л"], answer: "ж", final: "журнал" },
+    // "жайвір" видалено
+    { id: 6, prefix: ["П","а","р","и"], suffix: [], answer: "ж", final: "Париж" },
+    { id: 7, prefix: [], suffix: ["а","н","н","а"], answer: "Ж", final: "Жанна" },
+    { id: 8, prefix: [], suffix: ["и","т","о","м","и","р"], answer: "Ж", final: "Житомир" },
+  ];
+
+  // Набір букв
+  const lettersPool = [
+    { id: "J1", ch: "Ж" }, { id: "J2", ch: "Ж" },
+    { id: "j1", ch: "ж" }, { id: "j2", ch: "ж" }, { id: "j3", ch: "ж" },
+    { id: "j4", ch: "ж" }, { id: "j5", ch: "ж" }, /* "j6" видалено */
+  ];
+
+  // Елементи DOM
+  const $words = document.getElementById("words");
+  const $lettersGrid = document.getElementById("lettersGrid");
+  const $win = document.getElementById("win");
+  const ok = document.getElementById("ok");
+  const no = document.getElementById("no");
+  const $btnAgain = document.getElementById("btnAgain");
+  const $doneText = document.getElementById("doneText");
+
+  // Стан гри
+  const placed = new Map(); // wordId -> { ch, letterId }
+  const used = new Set();   // letterId (ті, що зараз на полі)
+  
+  // Функція перемішування
+  const shuffle = a => [...a].sort(()=>0.5 - Math.random());
+
+  // Аудіо
+  function stopAll(){
+    document.querySelectorAll("audio").forEach(a=>{ try{ a.pause(); a.currentTime=0; }catch(e){} });
+  }
+  function play(id){
+    const a = document.getElementById(id);
+    if(!a) return;
+    stopAll();
+    a.currentTime = 0;
+    a.play().catch(()=>{});
+  }
+  document.addEventListener("click",(e)=>{
+    const btn = e.target.closest("[data-a]");
+    if(btn) play(btn.dataset.a);
+  });
+
+  // Перезапуск
+  document.getElementById("restart").addEventListener("click", init);
+
+  // Кнопка "Показати слова" (з'являється в кінці)
+  $btnAgain.addEventListener("click", ()=>{
+    document.querySelectorAll(".wordRow").forEach(row => {
+      const container = row.querySelector(".wordContainer");
+      const res = row.querySelector(".resultFull");
+      if(container && res){
+        container.style.display = "none";
+        res.style.display = "block";
+      }
+    });
+  });
+
+  function init(){
+    placed.clear(); used.clear();
+    $win.style.display = "none";
+    $btnAgain.style.display = "none";
+    $doneText.style.display = "none";
+    $words.innerHTML = "";
+    $lettersGrid.innerHTML = "";
+
+    // 1. Рендеримо слова
+    words.forEach(w => {
+      const row = document.createElement("div");
+      row.className = "wordRow";
+      row.dataset.wordId = w.id;
+
+      // Контейнер для літер (Flexbox) - щоб усе було в рядок
+      const container = document.createElement("div");
+      container.className = "wordContainer";
+
+      // Букви ДО
+      w.prefix.forEach(char => {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.textContent = char;
+        container.appendChild(c);
+      });
+
+      // ПРОПУСК
+      const dropZone = document.createElement("div");
+      dropZone.className = "cell drop"; 
+      dropZone.dataset.wordId = w.id;
+      container.appendChild(dropZone);
+
+      // Букви ПІСЛЯ
+      w.suffix.forEach(char => {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.textContent = char;
+        container.appendChild(c);
+      });
+
+      // Прихований результат (ціле слово)
+      const res = document.createElement("div");
+      res.className = "resultFull";
+      res.textContent = w.final;
+
+      row.appendChild(container);
+      row.appendChild(res);
+      $words.appendChild(row);
+    });
+
+    // 2. Рендеримо букви праворуч
+    const big = shuffle(lettersPool.filter(x=>x.ch==="Ж"));
+    const small = shuffle(lettersPool.filter(x=>x.ch==="ж"));
+    const rows = Math.max(big.length, small.length);
+
+    // Заголовки колонок
+    const h1 = document.createElement("div"); h1.className = "colTitle"; h1.textContent = "Ж";
+    const h2 = document.createElement("div"); h2.className = "colTitle"; h2.textContent = "ж";
+    $lettersGrid.appendChild(h1);
+    $lettersGrid.appendChild(h2);
+
+    for(let i=0; i<rows; i++){
+      $lettersGrid.appendChild(big[i] ? makeTile(big[i]) : spacer());
+      $lettersGrid.appendChild(small[i] ? makeTile(small[i]) : spacer());
+    }
+
+    // 3. Drag & Drop логіка
+    setupDragDrop();
+  }
+
+  function makeTile(l){
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.textContent = l.ch;
+    el.draggable = true;
+    el.dataset.letterId = l.id;
+    el.dataset.ch = l.ch;
+
+    el.addEventListener("dragstart",(e)=>{
+      if(el.classList.contains("used")) return e.preventDefault();
+      e.dataTransfer.setData("letterId", l.id);
+      e.dataTransfer.setData("ch", l.ch);
+    });
+    return el;
+  }
+
+  function spacer(){
+    const s = document.createElement("div");
+    s.style.width = "80px"; s.style.height = "70px";
+    return s;
+  }
+
+  function setupDragDrop(){
+    document.querySelectorAll(".drop").forEach(zone => {
+      zone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if(zone.classList.contains("locked")) return;
+        zone.classList.add("over");
+      });
+      zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+      
+      zone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        zone.classList.remove("over");
+        if(zone.classList.contains("locked")) return;
+
+        const letterId = e.dataTransfer.getData("letterId");
+        const ch = e.dataTransfer.getData("ch");
+        if(!letterId || !ch) return;
+
+        const wordId = Number(zone.dataset.wordId);
+        handleDrop(zone, wordId, letterId, ch);
+      });
+    });
+  }
+
+  function handleDrop(zone, wordId, letterId, ch){
+    if(used.has(letterId)) return; // цей тайл вже десь стоїть
+
+    const w = words.find(x => x.id === wordId);
+    if(!w) return;
+
+    // 1. Позначаємо тайл як використаний (сірий)
+    const tile = document.querySelector(`.tile[data-letter-id="${cssEscape(letterId)}"]`);
+    if(tile) tile.classList.add("used");
+    used.add(letterId);
+
+    // 2. Вставляємо букву в зону
+    zone.innerHTML = "";
+    const p = document.createElement("div");
+    p.className = "placed";
+    p.textContent = ch;
+    zone.appendChild(p);
+    
+    placed.set(wordId, { ch, letterId });
+
+    // 3. Перевірка
+    if(ch === w.answer){
+      // ПРАВИЛЬНО
+      zone.classList.add("locked");
+      ok.currentTime=0; ok.play().catch(()=>{});
+
+      // Можна одразу показати слово, але в завданні "ще раз" просили це робити в кінці.
+      // Тут ми просто лишаємо складені квадратики.
+      
+      checkWin();
+    } else {
+      // ПОМИЛКА
+      p.classList.add("bad"); // червоний колір + анімація
+      no.currentTime=0; no.play().catch(()=>{});
+
+      // ПОВЕРНЕННЯ БУКВИ НА МІСЦЕ
+      setTimeout(() => {
+        // Очищаємо зону
+        zone.innerHTML = "";
+        
+        // Звільняємо букву в логіці
+        used.delete(letterId);
+        placed.delete(wordId);
+
+        // Робимо плитку знову активною (прибираємо сірий колір)
+        if(tile) tile.classList.remove("used");
+      }, 500); // через 0.5 сек
+    }
+  }
+
+  function checkWin(){
+    const locked = document.querySelectorAll(".drop.locked").length;
+    if(locked === words.length){
+      setTimeout(()=>{
+        $win.style.display = "flex";
+        $btnAgain.style.display = "inline-flex";
+        $doneText.style.display = "inline";
+      }, 500);
+    }
+  }
+
+  function cssEscape(v){
+    if(window.CSS && CSS.escape) return CSS.escape(String(v));
+    return String(v).replace(/[^a-zA-Z0-9\-_]/g, "\\$&");
+  }
+
+  init();
+</script>
+</body>
+</html>

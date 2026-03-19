@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Конструюємо слова зі складів</title>
+
+<style>
+:root{
+  --bg:#f0f8ff;
+  --card:#fff;
+  --text:#2c3e50;
+  --line:rgba(44,62,80,.12);
+  --shadow:rgba(0,0,0,.10);
+  --accent:#ffd84d;
+  --good:#22c55e;
+  --bad:#ef4444;
+  --blue:#3498db; /* Блакитний контур */
+  --blue2:#2980b9;
+}
+
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:var(--bg);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px;
+  color:var(--text);
+}
+
+h1{ margin:0 0 12px; }
+
+.topbar{
+  width:100%;
+  max-width:1200px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  flex-wrap:wrap;
+  background:var(--card);
+  border:1px solid var(--line);
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
+  padding:12px 16px;
+  border-radius:16px;
+  margin-bottom:16px;
+}
+
+.snd{
+  border:0;
+  background:var(--accent);
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  box-shadow:0 4px 10px var(--shadow);
+  cursor:pointer;
+  font-size:18px;
+}
+
+.instruction{
+  font-size:20px;
+  font-weight:800;
+}
+
+.afterWin{
+  display:none;
+  gap:12px;
+  align-items:center;
+}
+
+.winBadge{
+  background:rgba(34,197,94,.12);
+  border:2px solid rgba(34,197,94,.35);
+  color:var(--good);
+  padding:10px 14px;
+  border-radius:14px;
+  font-weight:900;
+}
+
+.againBtn{
+  border:0;
+  background:var(--good);
+  color:#fff;
+  padding:10px 16px;
+  border-radius:14px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.game-container{
+  width:100%;
+  max-width:1200px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.task-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  background:#fff;
+  padding:14px;
+  border-radius:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+  align-items:center;
+  min-height: 100px; /* Фіксуємо висоту, щоб не скакало при зміні на текст */
+}
+
+/* Якщо слово складено - центруємо його */
+.task-row.completed-text {
+  display: flex;
+  justify-content: center;
+}
+
+.drop-zone{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+
+.slots{
+  display:flex;
+  gap:10px;
+}
+
+.slot{
+  width:80px; /* Трохи ширше для великих літер */
+  height:70px;
+  background:#ecf0f1;
+  border:3px dashed #bdc3c7;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.syllables{
+  display:flex;
+  gap:10px;
+  justify-content:flex-start;
+}
+
+/* --- ОНОВЛЕНИЙ ДИЗАЙН КОМІРОК --- */
+.syllable{
+  width:80px;
+  height:70px;
+  background: #fff;             /* Білий фон */
+  color: #000;                  /* Чорний текст */
+  border: 2px solid var(--blue);/* Блакитний контур */
+  font-size: 34px;              /* Збільшено на 50% (було ~22) */
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  cursor:grab;
+  user-select:none;
+  box-shadow:0 4px rgba(0,0,0,0.1);
+}
+
+.syllable.used{
+  opacity: 0.5;
+  cursor:default;
+}
+
+/* Стиль для вже складеного слова (просто текст) */
+.final-text {
+  font-size: 34px;
+  font-weight: 900;
+  color: #000;
+  letter-spacing: 1px;
+}
+
+@media(max-width:800px){
+  .task-row{ grid-template-columns:1fr; }
+  .drop-zone{ justify-content:center; }
+  .syllables{ justify-content:center; }
+}
+</style>
+</head>
+
+<body>
+
+<h1>Конструюємо слова зі складів</h1>
+
+<div class="topbar">
+  <button class="snd" id="playSound">🔊</button>
+  <div class="instruction">Склади слово зі складів.</div>
+
+  <div class="afterWin" id="afterWin">
+    <div class="winBadge">🎉 Молодець!</div>
+    <button class="againBtn" id="again">Ще раз</button>
+  </div>
+</div>
+
+<div class="game-container" id="game"></div>
+
+<audio id="au" src="au.mp3"></audio>
+<audio id="ok" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+<audio id="no" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+const levels = [
+  { word:"робітник", syllables:["ро","біт","ник"] },
+  { word:"барбарис", syllables:["бар","ба","рис"] },
+  { word:"барабан", syllables:["ба","ра","бан"] },
+  { word:"субота", syllables:["су","бо","та"] },
+  { word:"борсук", syllables:["бор","сук"] },
+  { word:"будинок", syllables:["бу","ди","нок"] },
+];
+
+const game = document.getElementById("game");
+const afterWin = document.getElementById("afterWin");
+const au = document.getElementById("au");
+const ok = document.getElementById("ok");
+const no = document.getElementById("no");
+
+let dragged = null;
+
+function shuffle(arr){
+  return [...arr].sort(()=>Math.random()-0.5);
+}
+
+function init(){
+  game.innerHTML="";
+  afterWin.style.display="none";
+
+  levels.forEach((lvl, index)=>{
+    const row=document.createElement("div");
+    row.className="task-row";
+    row.dataset.idx = index; // Зберігаємо індекс, щоб знайти слово пізніше
+
+    const left=document.createElement("div");
+    left.className="drop-zone";
+
+    const slots=document.createElement("div");
+    slots.className="slots";
+
+    lvl.syllables.forEach((s)=>{
+      const slot=document.createElement("div");
+      slot.className="slot";
+      slot.dataset.expected=s;
+      slot.addEventListener("dragover",e=>e.preventDefault());
+      slot.addEventListener("drop",()=>drop(slot,row));
+      slots.appendChild(slot);
+    });
+
+    left.appendChild(slots);
+
+    const right=document.createElement("div");
+    right.className="syllables";
+
+    // Мішаємо так, щоб перший не був першим (якщо можливо)
+    let parts = [...lvl.syllables];
+    if(parts.length > 1) {
+       const first = parts[0];
+       const rest = shuffle(parts.slice(1));
+       parts = [...rest, first];
+    } else {
+       parts = shuffle(parts);
+    }
+
+    parts.forEach(s=>{
+      const el=document.createElement("div");
+      el.className="syllable";
+      el.textContent=s;
+      el.draggable=true;
+      el.addEventListener("dragstart",()=>dragged=el);
+      right.appendChild(el);
+    });
+
+    row.appendChild(left);
+    row.appendChild(right);
+    game.appendChild(row);
+  });
+}
+
+function drop(slot,row){
+  if(!dragged || slot.children.length) return;
+
+  if(dragged.textContent!==slot.dataset.expected){
+    no.play();
+    return;
+  }
+
+  slot.appendChild(dragged);
+  dragged.classList.add("used");
+  dragged.draggable=false;
+  dragged=null;
+  ok.play();
+
+  checkRow(row);
+}
+
+function checkRow(row){
+  const slots=row.querySelectorAll(".slot");
+  // Якщо всі слоти заповнені
+  if([...slots].every(s=>s.children.length)){
+    
+    // Отримуємо повне слово з масиву
+    const idx = row.dataset.idx;
+    const fullWord = levels[idx].word;
+
+    // ПЕРЕТВОРЕННЯ:
+    // 1. Очищаємо вміст рядка
+    row.innerHTML = "";
+    
+    // 2. Додаємо клас для центрування
+    row.classList.add("completed-text");
+    row.classList.add("correct-row"); // мітка, що рядок готовий
+
+    // 3. Вставляємо просто слово
+    const textDiv = document.createElement("div");
+    textDiv.className = "final-text";
+    textDiv.textContent = fullWord;
+    row.appendChild(textDiv);
+
+    checkWin();
+  }
+}
+
+function checkWin(){
+  // Перевіряємо, чи кількість готових рядків дорівнює загальній кількості рівнів
+  if(document.querySelectorAll(".correct-row").length === levels.length){
+    afterWin.style.display="flex";
+    
+    // Піднімаємо сторінку вгору плавно
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+}
+
+document.getElementById("playSound").onclick=()=>au.play();
+document.getElementById("again").onclick=init;
+
+init();
+</script>
+</body>
+</html>

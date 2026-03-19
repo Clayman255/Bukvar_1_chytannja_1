@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Слова-втікачі</title>
+  <style>
+    :root{
+      --bg:#f0f7ff;
+      --card:#fff;
+      --accent:#4da6ff;
+      --shadow:rgba(0,0,0,.10);
+      --text:#2c3e50;
+      --line:rgba(44,62,80,.12);
+      --good:#22c55e;
+      --bad:#ef4444;
+    }
+
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:14px;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size:2.5rem; /* +20% */
+      font-weight:900;
+      text-align:center;
+      color: #1a5fb4;
+    }
+
+    .task{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      background:var(--card);
+      border:1px solid var(--line);
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+      padding:18px;
+      border-radius:16px;
+      max-width:900px;
+      width:100%;
+      margin-bottom:20px;
+      font-size:1.56rem; /* +20% */
+      font-weight:bold;
+      text-align:center;
+    }
+
+    /* Повідомлення про перемогу вгорі */
+    .win-banner {
+      display: none;
+      width: 100%;
+      max-width: 900px;
+      background: #e8f5e9;
+      border: 3px solid var(--good);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      animation: slideDown 0.5s ease-out;
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .win-banner h2 { color: var(--good); margin: 0 0 10px 0; font-size: 2.2rem; }
+
+    .wrap{
+      width:100%;
+      max-width:1100px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:20px;
+    }
+
+    @media (min-width: 800px){
+      .wrap{
+        grid-template-columns: 280px 1fr;
+      }
+    }
+
+    .words-pool{
+      background:var(--card);
+      border:2px solid var(--accent);
+      border-radius:18px;
+      padding:15px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height: 300px;
+    }
+
+    .tile{
+      background:#fff;
+      border:2px solid #ddd;
+      border-radius:12px;
+      padding:12px 18px;
+      font-size:1.44rem; /* +20% */
+      font-weight:bold;
+      cursor:grab;
+      text-align:center;
+      box-shadow:0 4px 6px var(--shadow);
+      user-select:none;
+      transition: transform 0.2s;
+    }
+    .tile:active{cursor:grabbing; transform:scale(0.95);}
+    .tile.used{opacity:0.2; filter:grayscale(1); cursor:default;}
+
+    .sentences-list{
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+    }
+
+    .sentence-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:15px;
+      padding:24px;
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      font-size:1.56rem; /* +20% */
+      box-shadow:0 4px 10px rgba(0,0,0,0.05);
+      line-height: 1.5;
+    }
+
+    .drop-zone{
+      min-width:140px;
+      height:50px;
+      border:2px dashed var(--accent);
+      border-radius:8px;
+      background:rgba(77,166,255,0.05);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      vertical-align: middle;
+      transition:0.2s;
+      padding: 0 10px;
+    }
+    .drop-zone.over{background:rgba(34,197,94,0.2); border-color:var(--good);}
+    
+    /* Сортування стилів для вставленого слова */
+    .drop-zone.locked{
+      border:2px solid var(--good); 
+      background:rgba(34,197,94,0.1); 
+      color: black; /* Текст стає чорним */
+      font-weight:bold;
+    }
+
+    .bad-shake{animation:shake 0.45s ease-in-out; border-color:var(--bad)}
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-5px)}
+      75%{transform:translateX(5px)}
+    }
+
+    .btn-restart{
+      background:var(--good);
+      color:white;
+      border:none;
+      padding:12px 25px;
+      font-size:1.44rem;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Слова-втікачі</h1>
+
+  <div id="winBanner" class="win-banner">
+    <h2>Чудово! ✨</h2>
+    <p style="font-size:1.6rem; margin-bottom:15px;">Усі слова на своїх місцях! Прочитай речення ще раз.</p>
+    <button class="btn-restart" onclick="location.reload()">Зіграти ще раз</button>
+  </div>
+
+  <div class="task" id="taskBox">
+    Допоможи словам повернутися на свої місця! Перетягни слово у відповідне речення.
+  </div>
+
+  <div class="wrap">
+    <aside class="words-pool" id="pool"></aside>
+    <section class="sentences-list" id="list"></section>
+  </div>
+
+  <audio id="sound-ok" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+  <audio id="sound-no" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+  const data = [
+    { id: 1, textBefore: "У саду росте", textAfter: ".", answer: "яблуня" },
+    { id: 2, textBefore: "Мій", textAfter: "називається Мурчик.", answer: "кіт" },
+    { id: 3, textBefore: "У мого друга є", textAfter: "песик.", answer: "маленький" },
+    { id: 4, textBefore: "На мій день народження", textAfter: "спекла торт.", answer: "мама" },
+    { id: 5, textBefore: "Мені подобається", textAfter: "в теніс.", answer: "грати" }
+  ];
+
+  const $pool = document.getElementById("pool");
+  const $list = document.getElementById("list");
+  const $winBanner = document.getElementById("winBanner");
+  const $taskBox = document.getElementById("taskBox");
+  const sndOk = document.getElementById("sound-ok");
+  const sndNo = document.getElementById("sound-no");
+
+  function init() {
+    const shuffledAnswers = data.map(d => d.answer).sort(() => Math.random() - 0.5);
+    shuffledAnswers.forEach(word => {
+      const el = document.createElement("div");
+      el.className = "tile";
+      el.textContent = word;
+      el.draggable = true;
+      el.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text", word);
+      });
+      $pool.appendChild(el);
+    });
+
+    data.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "sentence-card";
+      
+      const before = document.createElement("span");
+      before.textContent = item.textBefore;
+      
+      const zone = document.createElement("div");
+      zone.className = "drop-zone";
+      zone.dataset.answer = item.answer;
+      
+      const after = document.createElement("span");
+      after.textContent = item.textAfter;
+
+      card.appendChild(before);
+      card.appendChild(zone);
+      card.appendChild(after);
+      $list.appendChild(card);
+
+      zone.addEventListener("dragover", (e) => e.preventDefault());
+      zone.addEventListener("dragenter", () => zone.classList.add("over"));
+      zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+      zone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        zone.classList.remove("over");
+        const droppedWord = e.dataTransfer.getData("text");
+        
+        if (droppedWord === zone.dataset.answer) {
+          zone.textContent = droppedWord;
+          zone.classList.add("locked");
+          sndOk.play();
+          markWordUsed(droppedWord);
+          checkWin();
+        } else {
+          sndNo.play();
+          zone.classList.add("bad-shake");
+          setTimeout(() => zone.classList.remove("bad-shake"), 500);
+        }
+      });
+    });
+  }
+
+  function markWordUsed(word) {
+    const tiles = document.querySelectorAll(".tile");
+    for (let t of tiles) {
+      if (t.textContent === word && !t.classList.contains("used")) {
+        t.classList.add("used");
+        t.draggable = false;
+        break;
+      }
+    }
+  }
+
+  function checkWin() {
+    const total = data.length;
+    const solved = document.querySelectorAll(".drop-zone.locked").length;
+    if (solved === total) {
+      setTimeout(() => {
+        $winBanner.style.display = "block";
+        $taskBox.style.display = "none";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 500);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

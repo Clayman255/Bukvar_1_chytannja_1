@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Встав букву "дж" або "дз"</title>
+  <style>
+    :root{
+      --bg:#fbf6ee;
+      --card:#fff;
+      --accent:#ffd84d;
+      --shadow:rgba(0,0,0,.10);
+      --text:#2c3e50;
+      --line:rgba(44,62,80,.12);
+      --good:#22c55e;
+      --bad:#ef4444;
+    }
+
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:14px;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size:2.09rem;
+      font-weight:900;
+      text-align:center;
+    }
+
+    .task{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:15px;
+      background:var(--card);
+      border:1px solid var(--line);
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+      padding:12px 20px;
+      border-radius:16px;
+      max-width:1200px;
+      width:100%;
+      margin-bottom:14px;
+      font-size:1.35rem;
+      font-weight:800;
+      text-align:center;
+    }
+
+    .again{
+      border:0;
+      background:rgba(34,197,94,.12);
+      color:var(--text);
+      border:2px solid rgba(34,197,94,.35);
+      padding:8px 16px;
+      border-radius:14px;
+      font-family: Arial, sans-serif;
+      font-weight:900;
+      font-size:1.14rem;
+      cursor:pointer;
+      display:none;
+    }
+    .again:active{transform:scale(.98)}
+
+    .doneText{
+      display:none;
+      font-weight:900;
+      color:var(--good);
+      font-size:1.14rem;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:1200px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+
+    @media (min-width: 980px){
+      .wrap{
+        grid-template-columns: 1.3fr .7fr;
+        align-items:start;
+      }
+    }
+
+    .words{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:0 10px 24px rgba(0,0,0,.08);
+      padding:14px;
+      display:grid;
+      gap:12px;
+    }
+
+    .wordRow{
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:18px;
+      box-shadow:0 6px 16px rgba(0,0,0,.06);
+      padding:12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+
+    .cells{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .cell{
+      width:70px;
+      height:70px;
+      border-radius:15px;
+      background:#fff;
+      border:3px solid rgba(0,0,0,.10);
+      box-shadow:0 6px 14px rgba(0,0,0,.08);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.9rem;
+      font-weight:900;
+      user-select:none;
+    }
+
+    .drop{
+      width:80px;
+      border-style:dashed;
+      background:rgba(255,216,77,.12);
+      transition:.2s;
+    }
+    .drop.over{border-color:var(--good); background:rgba(34,197,94,.10);}
+    .drop.locked{border-style:solid; border-color:var(--good); background:rgba(34,197,94,.10);}
+
+    .placed{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: var(--text);
+    }
+    .placed.bad{animation:shake .45s ease-in-out; color:var(--bad)}
+
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-8px)}
+      75%{transform:translateX(8px)}
+    }
+
+    .result{
+      font-size:1.8rem;
+      font-weight:900;
+      padding:6px 15px;
+      border-radius:14px;
+      background:rgba(34,197,94,.10);
+      border:2px solid rgba(34,197,94,.35);
+      display:none;
+      white-space:nowrap;
+    }
+
+    .letters{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:0 10px 24px rgba(0,0,0,.08);
+      padding:14px;
+      /* Виправлення: робимо колонку липкою */
+      position: sticky;
+      top: 14px; /* Відступ від верхнього краю екрану при скролі */
+      z-index: 10;
+    }
+
+    .lettersGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      justify-items:center;
+    }
+
+    .colTitle{
+      width:100%;
+      text-align:center;
+      font-weight:900;
+      font-size:1.2rem;
+      margin-bottom:8px;
+      color: #7f8c8d;
+    }
+
+    .tile{
+      width:110px;
+      height:80px;
+      border-radius:16px;
+      background:#fff;
+      border:3px solid rgba(0,0,0,.10);
+      box-shadow:0 8px 18px rgba(0,0,0,.10);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:2.2rem;
+      font-weight:900;
+      cursor:grab;
+      user-select:none;
+      transition: transform .1s;
+    }
+    .tile:active{cursor:grabbing; transform:scale(.95)}
+    .tile.used{opacity:0.2; cursor:default; transform:none; box-shadow:none;}
+
+    .win{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(255,255,255,.96);
+      z-index:999;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:20px;
+      text-align:center;
+    }
+    .win .txt{ font-size:2.5rem; font-weight:900; color:var(--good); }
+    .btn{
+      border:0; background:var(--good); color:#fff;
+      font-size:1.2rem; font-weight:900; padding:15px 30px;
+      border-radius:16px; cursor:pointer; box-shadow:0 10px 20px rgba(34,197,94,.3);
+    }
+
+    @media (max-width: 979px){
+      .letters {
+        position: static; /* Відключаємо липкість на мобільних, де колонки одна під одною */
+      }
+      .cell{width:60px; height:60px; font-size:1.6rem;}
+      .drop{width:70px;}
+      .tile{width:90px; height:70px; font-size:1.8rem;}
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Встав букву</h1>
+
+  <div class="task">
+    <span>Встав "дж" або "дз".</span>
+    <button class="again" id="btnAgain" type="button">Ще раз</button>
+    <span class="doneText" id="doneText">Чудово!</span>
+  </div>
+
+  <div class="wrap">
+    <section class="words" id="words"></section>
+    <aside class="letters">
+      <div class="lettersGrid" id="lettersGrid">
+        <div class="colTitle">дж</div>
+        <div class="colTitle">дз</div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="win" id="win">
+    <div class="txt">Молодець! Усі слова складено!</div>
+    <button class="btn" id="restart">Грати знову</button>
+  </div>
+
+<script>
+  const wordsData = [
+    { id: 1, cells: [], missAt: 0, answer: "дз", final: "дзьоб", tail: "ь о б" },
+    { id: 2, cells: [], missAt: 0, answer: "дз", final: "дзеркало", tail: "е р к а л о" },
+    { id: 3, cells: [], missAt: 0, answer: "дж", final: "джміль", tail: "м і л ь" },
+    { id: 4, cells: [], missAt: 0, answer: "дз", final: "дзиґа", tail: "и ґ а" },
+    { id: 5, cells: [], missAt: 0, answer: "дз", final: "дзвоник", tail: "в о н и к" },
+    { id: 6, cells: ["ґ", "у"], missAt: 2, answer: "дз", final: "ґудзик", tail: "и к" },
+    { id: 7, cells: [], missAt: 0, answer: "дж", final: "джин", tail: "и н" },
+    { id: 8, cells: ["с", "а"], missAt: 2, answer: "дж", final: "саджанці", tail: "а н ц і" },
+    { id: 9, cells: [], missAt: 0, answer: "дж", final: "джерело", tail: "е р е л о" }
+  ];
+
+  const lettersPool = [
+    { id: "dj1", ch: "дж" }, { id: "dj2", ch: "дж" }, { id: "dj3", ch: "дж" }, { id: "dj4", ch: "дж" },
+    { id: "dz1", ch: "дз" }, { id: "dz2", ch: "дз" }, { id: "dz3", ch: "дз" }, { id: "dz4", ch: "дз" }, { id: "dz5", ch: "дз" }
+  ];
+
+  const $words = document.getElementById("words");
+  const $lettersGrid = document.getElementById("lettersGrid");
+  const $win = document.getElementById("win");
+  const $btnAgain = document.getElementById("btnAgain");
+  const $doneText = document.getElementById("doneText");
+
+  let placed = new Map();
+  let used = new Set();
+
+  const shuffle = a => [...a].sort(() => 0.5 - Math.random());
+
+  function init(){
+    placed.clear(); used.clear();
+    $win.style.display = "none";
+    $btnAgain.style.display = "none";
+    $doneText.style.display = "none";
+    $words.innerHTML = "";
+    
+    const tiles = $lettersGrid.querySelectorAll('.tile, [style*="opacity: 0"]');
+    tiles.forEach(t => t.remove());
+
+    wordsData.forEach(w => {
+      const row = document.createElement("div");
+      row.className = "wordRow";
+      row.dataset.wordId = w.id;
+
+      const cellsWrap = document.createElement("div");
+      cellsWrap.className = "cells";
+
+      w.cells.forEach(ch => {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.textContent = ch;
+        cellsWrap.appendChild(c);
+      });
+
+      const drop = document.createElement("div");
+      drop.className = "cell drop";
+      drop.dataset.word = w.id;
+      cellsWrap.appendChild(drop);
+
+      const tail = w.tail ? w.tail.split(" ") : [];
+      tail.forEach(ch => {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.textContent = ch;
+        cellsWrap.appendChild(c);
+      });
+
+      const res = document.createElement("div");
+      res.className = "result";
+      res.textContent = w.final;
+
+      row.appendChild(cellsWrap);
+      row.appendChild(res);
+      $words.appendChild(row);
+    });
+
+    const dzh = shuffle(lettersPool.filter(x => x.ch === "дж"));
+    const dz = shuffle(lettersPool.filter(x => x.ch === "дз"));
+    const rows = Math.max(dzh.length, dz.length);
+
+    for(let i=0; i<rows; i++){
+      $lettersGrid.appendChild(dzh[i] ? makeTile(dzh[i]) : spacer());
+      $lettersGrid.appendChild(dz[i] ? makeTile(dz[i]) : spacer());
+    }
+
+    setupDragAndDrop();
+  }
+
+  function makeTile(l){
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.textContent = l.ch;
+    el.draggable = true;
+    el.dataset.letterId = l.id;
+    el.dataset.ch = l.ch;
+    el.addEventListener("dragstart", e => {
+      if(el.classList.contains("used")) return e.preventDefault();
+      e.dataTransfer.setData("letterId", l.id);
+      e.dataTransfer.setData("ch", l.ch);
+    });
+    return el;
+  }
+
+  function spacer(){
+    const s = document.createElement("div");
+    s.style.width = "110px"; s.style.height = "80px"; s.style.opacity = "0";
+    return s;
+  }
+
+  function setupDragAndDrop(){
+    document.querySelectorAll(".drop").forEach(zone => {
+      zone.addEventListener("dragover", e => {
+        e.preventDefault();
+        if(!zone.classList.contains("locked")) zone.classList.add("over");
+      });
+      zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+      zone.addEventListener("drop", e => {
+        e.preventDefault();
+        zone.classList.remove("over");
+        if(zone.classList.contains("locked")) return;
+        
+        const letterId = e.dataTransfer.getData("letterId");
+        const ch = e.dataTransfer.getData("ch");
+        const wordId = Number(zone.dataset.word);
+        
+        const w = wordsData.find(x => x.id === wordId);
+        if(ch === w.answer){
+          zone.innerHTML = `<div class="placed">${ch}</div>`;
+          zone.classList.add("locked");
+          used.add(letterId);
+          document.querySelector(`[data-letter-id="${letterId}"]`).classList.add("used");
+          
+          setTimeout(() => {
+            const row = zone.closest(".wordRow");
+            row.querySelector(".cells").style.display = "none";
+            row.querySelector(".result").style.display = "block";
+            checkWin();
+          }, 300);
+        } else {
+          const p = document.createElement("div");
+          p.className = "placed bad";
+          p.textContent = ch;
+          zone.innerHTML = "";
+          zone.appendChild(p);
+          setTimeout(() => zone.innerHTML = "", 500);
+        }
+      });
+    });
+  }
+
+  function checkWin(){
+    if(document.querySelectorAll(".drop.locked").length === wordsData.length){
+      $win.style.display = "flex";
+      $btnAgain.style.display = "inline-flex";
+      $doneText.style.display = "inline";
+    }
+  }
+
+  $btnAgain.onclick = () => {
+    document.querySelectorAll(".wordRow").forEach(row => {
+      row.querySelector(".cells").style.display = "none";
+      row.querySelector(".result").style.display = "block";
+    });
+  };
+
+  document.getElementById("restart").onclick = init;
+  init();
+</script>
+</body>
+</html>

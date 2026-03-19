@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Гра "Доповни речення"</title>
+  <style>
+    :root {
+      --bg: #fbf6ee;
+      --accent: #4da6ff;
+      --bad: #ef4444;
+      --success-bg: #e2fce2; /* Блідо-зелений */
+      --success-text: #000000; 
+      --text-main: #000000; /* Чорний шрифт */
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { color: #2980b9; margin-bottom: 10px; font-size: 2rem; }
+
+    .task-desc {
+      font-size: 1.2rem;
+      background: #fff;
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      max-width: 850px;
+      margin-bottom: 25px;
+      line-height: 1.5;
+      border: 2px solid #edc9af;
+      text-align: center;
+    }
+
+    .game-container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 950px;
+    }
+
+    .sentence-row {
+      margin-bottom: 25px;
+      font-size: 1.52rem;
+      font-weight: bold;
+      line-height: 2.2;
+      color: var(--text-main);
+      display: block;
+    }
+
+    .drop-zone {
+      display: inline-block;
+      min-width: 220px;
+      border-bottom: 3px solid var(--accent);
+      margin: 0 10px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--accent);
+      transition: all 0.3s;
+    }
+
+    .drop-zone.filled {
+      background-color: var(--success-bg);
+      border-bottom-color: #b7eeb7;
+      color: var(--success-text);
+      padding: 0 15px;
+      border-radius: 8px;
+    }
+
+    .options-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px dashed #ccc;
+    }
+
+    .option {
+      background: #fff;
+      border: 2px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+
+    .option:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+    .option.used { opacity: 0.3; cursor: default; transform: none; }
+
+    .win-message {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); background: white;
+      padding: 40px 60px; border-radius: 20px; font-size: 2.5rem;
+      font-weight: bold; color: #16a34a; border: 6px solid #16a34a;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4); z-index: 100; text-align: center;
+    }
+
+    button.reset-btn {
+      margin-top: 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 25px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Доповни речення</h1>
+  <div class="task-desc">
+    Знайди ці речення у тексті оповідання "Найрадісніше і найсумніше" (В. Сухомлинський). <br>
+    Натисни на порожнє місце у реченні, а потім вибери правильну його частину знизу.
+  </div>
+</header>
+
+<div class="game-container">
+  <div class="sentence-row">
+    1. Намалюйте найрадісніше і <span class="drop-zone" data-answer="найсумніше" id="dz1">...</span>.
+  </div>
+
+  <div class="sentence-row">
+    2. Миколка <span class="drop-zone" data-answer="розгорнув зошит" id="dz2">...</span> і задумався.
+  </div>
+
+  <div class="sentence-row">
+    3. Намалював <span class="drop-zone" data-answer="квітку конюшини" id="dz3">...</span> і над нею бджолу.
+  </div>
+
+  <div class="sentence-row">
+    4. Голе віття <span class="drop-zone" data-answer="поливає" id="dz4">...</span> дощик.
+  </div>
+
+  <div class="options-container" id="options">
+    </div>
+  
+  <center><button class="reset-btn" onclick="location.reload()">Почати спочатку 🔄</button></center>
+</div>
+
+<div id="winMsg" class="win-message">Молодець! <br> Всі речення доповнено правильно!</div>
+
+<script>
+  const optionsData = ["найсумніше", "розгорнув зошит", "квітку конюшини", "поливає", "найкраще", "відкрив книгу"];
+  let activeZone = null;
+  let matchedCount = 0;
+  const totalNeeded = 4;
+
+  function initOptions() {
+    const container = document.getElementById('options');
+    const shuffled = [...optionsData].sort(() => Math.random() - 0.5);
+    
+    shuffled.forEach(text => {
+      const btn = document.createElement('div');
+      btn.className = 'option';
+      btn.textContent = text;
+      btn.onclick = () => selectOption(btn);
+      container.appendChild(btn);
+    });
+
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+      zone.onclick = () => {
+        document.querySelectorAll('.drop-zone').forEach(z => {
+          if(!z.classList.contains('filled')) z.style.backgroundColor = 'transparent';
+        });
+        if (!zone.classList.contains('filled')) {
+          activeZone = zone;
+          zone.style.backgroundColor = '#fff3cd';
+        }
+      };
+    });
+  }
+
+  function selectOption(btn) {
+    if (!activeZone || btn.classList.contains('used')) return;
+
+    if (btn.textContent === activeZone.dataset.answer) {
+      activeZone.textContent = btn.textContent;
+      activeZone.classList.add('filled');
+      activeZone.style.backgroundColor = '';
+      btn.classList.add('used');
+      activeZone = null;
+      matchedCount++;
+
+      if (matchedCount === totalNeeded) {
+        showWinMessage();
+      }
+    } else {
+      activeZone.style.backgroundColor = '#f8d7da';
+      setTimeout(() => {
+        if (activeZone) activeZone.style.backgroundColor = '#fff3cd';
+      }, 400);
+    }
+  }
+
+  function showWinMessage() {
+    const msg = document.getElementById('winMsg');
+    msg.style.display = 'block';
+    setTimeout(() => {
+      msg.style.display = 'none';
+    }, 5000);
+  }
+
+  initOptions();
+</script>
+
+</body>
+</html>

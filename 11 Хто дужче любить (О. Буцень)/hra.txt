@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Гра "Хто природі друг?"</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --accent: #4da6ff;
+      --friend-color: #22c55e; /* Зелений */
+      --enemy-color: #ef4444;  /* Червоний */
+      --text-main: #000000;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { color: #2980b9; margin-bottom: 10px; }
+    .task-desc {
+      font-size: 1.4rem; background: #fff; padding: 15px 30px;
+      border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border-left: 6px solid var(--accent); margin-bottom: 30px;
+      max-width: 900px; line-height: 1.4;
+    }
+
+    .game-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 30px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 2px solid transparent;
+      transition: transform 0.2s;
+    }
+
+    .card:hover { transform: translateY(-3px); }
+
+    .situation-text {
+      font-size: 24px; /* Досить великий шрифт */
+      line-height: 1.5;
+      margin-bottom: 40px;
+    }
+
+    /* Кружечок справа внизу */
+    .circle-slot {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border: 4px solid #cbd5e1;
+      border-radius: 50%;
+      cursor: pointer;
+      background: #f1f5f9;
+      transition: all 0.3s;
+    }
+
+    /* Палітра посередині внизу */
+    .palette-container {
+      margin-top: 40px;
+      display: flex;
+      gap: 20px;
+      background: white;
+      padding: 15px 30px;
+      border-radius: 50px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      align-items: center;
+    }
+
+    .palette-label { font-weight: bold; font-size: 1.2rem; margin-right: 10px; }
+
+    .color-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 5px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .color-btn:active { transform: scale(0.9); }
+    .color-btn.active { border-color: #334155; transform: scale(1.1); }
+
+    .green { background-color: var(--friend-color); }
+    .red { background-color: var(--enemy-color); }
+
+    .reset-btn {
+      margin-top: 30px;
+      padding: 12px 25px;
+      font-size: 18px;
+      background: #64748b;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .win-message {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); background: white;
+      padding: 40px; border-radius: 25px; font-size: 2.5rem;
+      font-weight: bold; color: #16a34a; border: 6px solid #16a34a;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4); z-index: 100; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Хто природі друг?</h1>
+  <div class="task-desc">
+    Прочитай ситуації. Замалюй <b>зеленим</b> кольором кружечок біля тексту, у якому йдеться про друзів природи, а <b>червоним</b> — про недругів.
+  </div>
+</header>
+
+<div class="game-container">
+  <div class="card" data-correct="green">
+    <div class="situation-text">
+      Сильний вітер вимив землю з-під коріння молодої берези. Сашко помітив це і обережно присипав коріння ґрунтом, щоб дерево не засохло.
+    </div>
+    <div class="circle-slot" onclick="paintCircle(this)"></div>
+  </div>
+
+  <div class="card" data-correct="red">
+    <div class="situation-text">
+      Марина нарвала величезний букет лісових конвалій разом із корінням. Тепер наступного року на цьому місці квіти вже не виростуть.
+    </div>
+    <div class="circle-slot" onclick="paintCircle(this)"></div>
+  </div>
+
+  <div class="card" data-correct="green">
+    <div class="situation-text">
+      Катруся побачила в річці пластикову пляшку, що застрягла в очереті. Дівчинка обережно дістала її довгою гілкою та віднесла до сміттєвого бака.
+    </div>
+    <div class="circle-slot" onclick="paintCircle(this)"></div>
+  </div>
+
+  <div class="card" data-correct="red">
+    <div class="situation-text">
+      Артем знайшов пташине гніздо і почав голосно кликати друзів, щоб роздивитися яєчка. Перелякана пташка покинула дім і більше не повернулася.
+    </div>
+    <div class="circle-slot" onclick="paintCircle(this)"></div>
+  </div>
+</div>
+
+<div class="palette-container">
+  <span class="palette-label">Обери колір:</span>
+  <div class="color-btn green" id="pickGreen" onclick="selectColor('green', this)"></div>
+  <div class="color-btn red" id="pickRed" onclick="selectColor('red', this)"></div>
+</div>
+
+<button class="reset-btn" onclick="location.reload()">Очистити все</button>
+
+<div id="winMsg" class="win-message">Чудова робота!</div>
+
+<script>
+  let currentColor = null;
+
+  function selectColor(color, btn) {
+    currentColor = color;
+    // Знімаємо виділення з усіх кнопок палітри
+    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+    // Виділяємо натиснуту
+    btn.classList.add('active');
+  }
+
+  function paintCircle(circle) {
+    if (!currentColor) {
+      alert("Спочатку обери колір на палітрі внизу!");
+      return;
+    }
+
+    const card = circle.closest('.card');
+    const correctColor = card.dataset.correct;
+
+    if (currentColor === correctColor) {
+      // Фарбуємо в обраний колір
+      circle.style.backgroundColor = (currentColor === 'green') ? '#22c55e' : '#ef4444';
+      circle.style.borderColor = 'white';
+      circle.classList.add('painted');
+      checkWin();
+    } else {
+      // Анімація помилки (трясіння)
+      card.style.borderColor = '#ef4444';
+      card.animate([
+        { transform: 'translateX(-5px)' },
+        { transform: 'translateX(5px)' }
+      ], { duration: 100, iterations: 4 });
+      setTimeout(() => card.style.borderColor = 'transparent', 500);
+    }
+  }
+
+  function checkWin() {
+    const painted = document.querySelectorAll('.circle-slot.painted');
+    if (painted.length === 4) {
+      setTimeout(() => {
+        document.getElementById('winMsg').style.display = 'block';
+      }, 500);
+    }
+  }
+</script>
+</body>
+</html>
